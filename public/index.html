@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEST4US Volunteer Management System</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    .tier-badge {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .kindness-ambassador {
+      background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+    }
+
+    .change-catalyst {
+      background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    }
+
+    .service-champion {
+      background: linear-gradient(135deg, #55efc4 0%, #00b894 100%);
+    }
+
+    .legacy-leader {
+      background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
+    }
+
+    .progress-ring {
+      transform: rotate(-90deg);
+    }
+
+    .progress-ring__circle {
+      transition: stroke-dasharray 0.35s;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100">
+  <!-- Navigation -->
+  <nav class="bg-white shadow-lg" id="navbar">
+    <div class="max-w-7xl mx-auto px-4">
+      <div class="flex justify-between items-center py-4">
+        <div class="flex items-center space-x-4">
+          <h1 class="text-2xl font-bold text-blue-600">NEST4US</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+          <span id="userGreeting" class="text-gray-700"></span>
+          <button id="logoutBtn"
+            class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-200">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto py-6 px-4">
+    <!-- Login/Register Form -->
+    <div id="authContainer" class="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
+      <div class="text-center mb-6">
+        <h2 id="authTitle" class="text-3xl font-bold text-gray-900">
+          Welcome to NEST4US
+        </h2>
+        <p class="text-gray-600 mt-2">Volunteer Management System</p>
+      </div>
+
+      <!-- Login Form -->
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email</label>
+          <input type="email" id="loginEmail"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Password</label>
+          <input type="password" id="loginPassword"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <button type="submit"
+          class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">
+          Sign In
+        </button>
+        <div class="text-center">
+          <button type="button" id="showRegisterBtn" class="text-blue-600 hover:text-blue-800">
+            Don't have an account? Register here
+          </button>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="registerForm" class="space-y-4 hidden">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">First Name *</label>
+            <input type="text" id="registerFirstName"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Last Name *</label>
+            <input type="text" id="registerLastName"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Email *</label>
+          <input type="email" id="registerEmail"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Password *</label>
+          <input type="password" id="registerPassword"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">School/Organization *</label>
+          <input type="text" id="registerSchool"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Date of Birth *</label>
+          <input type="date" id="registerDOB"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Phone Number *</label>
+          <input type="tel" id="registerPhone"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">State/Region</label>
+            <input type="text" id="registerState"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Country</label>
+            <input type="text" id="registerCountry"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Referral Code (Optional)</label>
+          <input type="text" id="registerReferralCode"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter referral code if you have one" />
+        </div>
+        <button type="submit"
+          class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">
+          Create Account
+        </button>
+        <div class="text-center">
+          <button type="button" id="showLoginBtn" class="text-blue-600 hover:text-blue-800">
+            Already have an account? Sign in here
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div id="dashboardContainer" class="hidden">
+      <!-- Dashboard Header -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900" id="dashboardGreeting"></h1>
+            <p class="text-gray-600 mt-1">
+              Welcome to your volunteer dashboard
+            </p>
+          </div>
+          <div class="mt-4 md:mt-0 flex space-x-3">
+            <button id="submitHoursBtn"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition duration-200">
+              <i class="fas fa-plus mr-2"></i>Submit Hours
+            </button>
+            <button id="exportDataBtn"
+              class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition duration-200">
+              <i class="fas fa-download mr-2"></i>Export Data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <!-- Total Hours Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-blue-100">
+              <i class="fas fa-clock text-blue-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Total Hours</p>
+              <p id="totalHours" class="text-2xl font-semibold text-gray-900">
+                0
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- This Year Hours Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-green-100">
+              <i class="fas fa-calendar text-green-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">This Year</p>
+              <p id="thisYearHours" class="text-2xl font-semibold text-gray-900">
+                0
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Current Tier Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-purple-100">
+              <i class="fas fa-medal text-purple-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Current Tier</p>
+              <p id="currentTier" class="text-lg font-semibold text-gray-900">
+                None
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Referral Code Card -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+          <div class="flex items-center">
+            <div class="p-3 rounded-full bg-yellow-100">
+              <i class="fas fa-share text-yellow-600 text-xl"></i>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-600">Referral Code</p>
+              <p id="referralCode" class="text-lg font-semibold text-gray-900">
+                -
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress to Next Tier -->
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Progress to Next Tier
+        </h3>
+        <div id="tierProgress">
+          <!-- Progress bar will be inserted here -->
+        </div>
+        <div id="badgeContainer" class="mt-4">
+          <h4 class="text-md font-medium text-gray-700 mb-2">Your Badges</h4>
+          <div id="badgesList" class="flex flex-wrap gap-2">
+            <!-- Badges will be inserted here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Hours History -->
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Hours History</h3>
+          <div class="mt-2 md:mt-0 flex space-x-2">
+            <select id="statusFilter" class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <button id="refreshHistoryBtn"
+              class="bg-gray-600 text-white px-3 py-1 rounded-md hover:bg-gray-700 transition duration-200 text-sm">
+              <i class="fas fa-refresh"></i>
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Activity
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hours
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Submitted
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody id="hoursHistoryTable" class="bg-white divide-y divide-gray-200">
+              <!-- History rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Hours Modal -->
+    <div id="submitHoursModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+      <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">
+              Submit Volunteer Hours
+            </h3>
+            <button id="closeSubmitModal" class="text-gray-400 hover:text-gray-600">
+              <i class="fas fa-times text-xl"></i>
+            </button>
+          </div>
+
+          <form id="submitHoursForm" class="space-y-4" enctype="multipart/form-data">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">First Name *</label>
+                <input type="text" id="hoursFirstName"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Last Name *</label>
+                <input type="text" id="hoursLastName"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">School/Organization *</label>
+              <input type="text" id="hoursSchool"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Name of Service Activity *</label>
+              <input type="text" id="activityName"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Date of Service *</label>
+                <input type="date" id="serviceDate"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Number of Hours *</label>
+                <input type="number" id="serviceHours" step="0.1" min="0.1"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Type of Service *</label>
+              <select id="serviceType"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required>
+                <option value="">Select service type</option>
+                <option value="Service Projects">Service Projects</option>
+                <option value="Community Events">Community Events</option>
+                <option value="Food Rescues">Food Rescues</option>
+                <option value="NEST Tutors">NEST Tutors</option>
+                <option value="Notes of Kindness">Notes of Kindness</option>
+                <option value="Workshops">Workshops</option>
+                <option value="Donations">Donations</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Activity Description *</label>
+              <textarea id="activityDescription" rows="3"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Picture Proof of Service</label>
+              <input type="file" id="proofOfService" accept=".jpg,.jpeg,.png,.pdf"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p class="text-sm text-gray-500 mt-1">
+                Upload JPG, PNG, or PDF files only
+              </p>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="isHistorical" class="rounded" />
+              <label for="isHistorical" class="ml-2 text-sm text-gray-700">This is for historical hours (done before
+                this system was
+                launched)</label>
+            </div>
+            <div class="flex justify-end space-x-3 pt-4">
+              <button type="button" id="cancelSubmitBtn"
+                class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition duration-200">
+                Cancel
+              </button>
+              <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200">
+                Submit Hours
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Panel (visible only for admin users) -->
+    <div id="adminPanel" class="hidden">
+      <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h2>
+
+        <!-- Admin Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="bg-blue-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-blue-900">
+              Total Volunteers
+            </h3>
+            <p id="adminTotalVolunteers" class="text-3xl font-bold text-blue-600">
+              0
+            </p>
+          </div>
+          <div class="bg-green-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-green-900">Total Hours</h3>
+            <p id="adminTotalHours" class="text-3xl font-bold text-green-600">
+              0
+            </p>
+          </div>
+          <div class="bg-yellow-50 rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-yellow-900">
+              Pending Submissions
+            </h3>
+            <p id="adminPendingSubmissions" class="text-3xl font-bold text-yellow-600">
+              0
+            </p>
+          </div>
+        </div>
+
+        <!-- Pending Hours for Review -->
+        <div class="mb-6">
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">
+            Pending Hours for Review
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Volunteer
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activity
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Hours
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="adminPendingHours" class="bg-white divide-y divide-gray-200">
+                <!-- Pending hours will be inserted here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+
+  <script>
+    // Global variables
+    let currentUser = null;
+    let authToken = localStorage.getItem("authToken");
+
+    // API base URL
+    const API_BASE = "/api";
+
+    // Initialize app
+    document.addEventListener("DOMContentLoaded", function () {
+      checkAuthStatus();
+      initializeEventListeners();
+    });
+
+    // Check authentication status
+    async function checkAuthStatus() {
+      if (authToken) {
+        try {
+          const response = await fetch(`${API_BASE}/volunteers/dashboard`, {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+
+          if (response.ok) {
+            currentUser = await response.json();
+            showDashboard();
+            loadDashboardData();
+
+            // Check if user is admin
+            const userResponse = await fetch(`${API_BASE}/auth/me`, {
+              headers: { Authorization: `Bearer ${authToken}` },
+            });
+
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              if (userData.role === "admin") {
+                loadAdminPanel();
+              }
+            }
+          } else {
+            showAuthForm();
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          showAuthForm();
+        }
+      } else {
+        showAuthForm();
+      }
+    }
+
+    // Initialize event listeners
+    function initializeEventListeners() {
+      // Auth form listeners
+      document
+        .getElementById("loginForm")
+        .addEventListener("submit", handleLogin);
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", handleRegister);
+      document
+        .getElementById("showRegisterBtn")
+        .addEventListener("click", showRegisterForm);
+      document
+        .getElementById("showLoginBtn")
+        .addEventListener("click", showLoginForm);
+
+      // Dashboard listeners
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", handleLogout);
+      document
+        .getElementById("submitHoursBtn")
+        .addEventListener("click", showSubmitHoursModal);
+      document
+        .getElementById("exportDataBtn")
+        .addEventListener("click", exportVolunteerData);
+      document
+        .getElementById("closeSubmitModal")
+        .addEventListener("click", hideSubmitHoursModal);
+      document
+        .getElementById("cancelSubmitBtn")
+        .addEventListener("click", hideSubmitHoursModal);
+      document
+        .getElementById("submitHoursForm")
+        .addEventListener("submit", handleSubmitHours);
+      document
+        .getElementById("statusFilter")
+        .addEventListener("change", filterHoursHistory);
+      document
+        .getElementById("refreshHistoryBtn")
+        .addEventListener("click", loadDashboardData);
+    }
+
+    // Authentication functions
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/login`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          authToken = data.token;
+          localStorage.setItem("authToken", authToken);
+          currentUser = data.user;
+          showMessage("Login successful!", "success");
+          showDashboard();
+          loadDashboardData();
+
+          // Check if admin
+          if (data.user.role === "admin") {
+            loadAdminPanel();
+          }
+        } else {
+          showMessage(data.message || "Login failed", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+
+      const formData = {
+        firstName: document.getElementById("registerFirstName").value,
+        lastName: document.getElementById("registerLastName").value,
+        email: document.getElementById("registerEmail").value,
+        password: document.getElementById("registerPassword").value,
+        schoolOrganization: document.getElementById("registerSchool").value,
+        dateOfBirth: document.getElementById("registerDOB").value,
+        phoneNumber: document.getElementById("registerPhone").value,
+        location: {
+          state: document.getElementById("registerState").value,
+          country: document.getElementById("registerCountry").value,
+        },
+        referredBy: document.getElementById("registerReferralCode").value,
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          authToken = data.token;
+          localStorage.setItem("authToken", authToken);
+          currentUser = data.user;
+          showMessage("Registration successful!", "success");
+          showDashboard();
+          loadDashboardData();
+        } else {
+          showMessage(data.message || "Registration failed", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem("authToken");
+      authToken = null;
+      currentUser = null;
+      showAuthForm();
+      showMessage("Logged out successfully", "success");
+    }
+
+    // UI Display Functions
+    function showAuthForm() {
+      document.getElementById("authContainer").classList.remove("hidden");
+      document.getElementById("dashboardContainer").classList.add("hidden");
+      document.getElementById("adminPanel").classList.add("hidden");
+      document.getElementById("navbar").style.display = "none";
+    }
+
+    function showDashboard() {
+      document.getElementById("authContainer").classList.add("hidden");
+      document
+        .getElementById("dashboardContainer")
+        .classList.remove("hidden");
+      document.getElementById("navbar").style.display = "block";
+    }
+
+    function showRegisterForm() {
+      document.getElementById("loginForm").classList.add("hidden");
+      document.getElementById("registerForm").classList.remove("hidden");
+      document.getElementById("authTitle").textContent = "Create Account";
+    }
+
+    function showLoginForm() {
+      document.getElementById("registerForm").classList.add("hidden");
+      document.getElementById("loginForm").classList.remove("hidden");
+      document.getElementById("authTitle").textContent = "Welcome Back";
+    }
+
+    // Dashboard Functions
+    async function loadDashboardData() {
+      if (!authToken) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/volunteers/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          updateDashboardUI(data);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error);
+      }
+    }
+
+    function updateDashboardUI(data) {
+      // Update user greeting
+      document.getElementById(
+        "userGreeting"
+      ).textContent = `Hello, ${data.profile.firstName}!`;
+      document.getElementById(
+        "dashboardGreeting"
+      ).textContent = `Welcome back, ${data.profile.firstName}!`;
+
+      // Update stats
+      document.getElementById("totalHours").textContent = data.totalHours;
+      document.getElementById("thisYearHours").textContent =
+        data.thisYearHours;
+      document.getElementById("currentTier").textContent = data.tier;
+      document.getElementById("referralCode").textContent = data.referralCode;
+
+      // Update tier progress
+      updateTierProgress(data.totalHours, data.tier);
+
+      // Update badges
+      updateBadges(data.badges);
+
+      // Update hours history
+      updateHoursHistory(data.hoursHistory);
+
+      // Pre-fill submit hours form
+      document.getElementById("hoursFirstName").value =
+        data.profile.firstName;
+      document.getElementById("hoursLastName").value = data.profile.lastName;
+      document.getElementById("hoursSchool").value =
+        data.profile.schoolOrganization;
+    }
+
+    function updateTierProgress(totalHours, currentTier) {
+      const tiers = [
+        {
+          name: "Kindness Ambassador",
+          hours: 50,
+          class: "kindness-ambassador",
+        },
+        { name: "Change Catalyst", hours: 100, class: "change-catalyst" },
+        { name: "Service Champion", hours: 150, class: "service-champion" },
+        { name: "Legacy Leader", hours: 250, class: "legacy-leader" },
+      ];
+
+      let nextTier = tiers.find((tier) => totalHours < tier.hours);
+
+      const progressContainer = document.getElementById("tierProgress");
+
+      if (!nextTier) {
+        progressContainer.innerHTML = `
+                    <div class="text-center p-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg">
+                        <i class="fas fa-crown text-3xl mb-2"></i>
+                        <p class="text-lg font-semibold">Congratulations! You've reached the highest tier!</p>
+                        <p class="text-sm opacity-90">Legacy Leader - ${totalHours} hours</p>
+                    </div>
+                `;
+        return;
+      }
+
+      const progress = (totalHours / nextTier.hours) * 100;
+      const remaining = nextTier.hours - totalHours;
+
+      progressContainer.innerHTML = `
+                <div class="mb-2 flex justify-between text-sm text-gray-600">
+                    <span>Progress to ${nextTier.name}</span>
+                    <span>${totalHours} / ${nextTier.hours} hours</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                    <div class="tier-badge h-4 rounded-full transition-all duration-500" style="width: ${Math.min(
+        progress,
+        100
+      )}%"></div>
+                </div>
+                <p class="text-sm text-gray-600">${remaining} hours remaining to reach ${nextTier.name
+        }</p>
+            `;
+    }
+
+    function updateBadges(badges) {
+      const container = document.getElementById("badgesList");
+
+      if (!badges || badges.length === 0) {
+        container.innerHTML =
+          '<p class="text-gray-500">No badges earned yet. Keep volunteering!</p>';
+        return;
+      }
+
+      container.innerHTML = badges
+        .map(
+          (badge) => `
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gradient-to-r from-yellow-400 to-orange-500 text-white">
+                    <i class="fas fa-award mr-1"></i>
+                    ${badge}
+                </span>
+            `
+        )
+        .join("");
+    }
+
+    function updateHoursHistory(history) {
+      const tbody = document.getElementById("hoursHistoryTable");
+
+      if (!history || history.length === 0) {
+        tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            <i class="fas fa-inbox text-3xl mb-2 block"></i>
+                            No volunteer hours submitted yet
+                        </td>
+                    </tr>
+                `;
+        return;
+      }
+
+      tbody.innerHTML = history
+        .map((entry) => {
+          const statusClass = {
+            pending: "bg-yellow-100 text-yellow-800",
+            approved: "bg-green-100 text-green-800",
+            rejected: "bg-red-100 text-red-800",
+          }[entry.status];
+
+          const statusIcon = {
+            pending: "fas fa-clock",
+            approved: "fas fa-check-circle",
+            rejected: "fas fa-times-circle",
+          }[entry.status];
+
+          return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${entry.activityName
+            }</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(
+              entry.serviceDate
+            ).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${entry.hours
+            }</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusClass}">
+                                <i class="${statusIcon} mr-1"></i>
+                                ${entry.status.charAt(0).toUpperCase() +
+            entry.status.slice(1)
+            }
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(
+              entry.submittedAt
+            ).toLocaleDateString()}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${entry.status === "pending"
+              ? '<button class="text-blue-600 hover:text-blue-900" onclick="editHours(\'' +
+              entry.id +
+              "')\">Edit</button>"
+              : "-"
+            }
+                            ${entry.rejectionReason
+              ? '<button class="text-red-600 hover:text-red-900 ml-2" onclick="showRejectionReason(\'' +
+              entry.rejectionReason +
+              "')\">View Reason</button>"
+              : ""
+            }
+                        </td>
+                    </tr>
+                `;
+        })
+        .join("");
+    }
+
+    // Hours Submission Functions
+    function showSubmitHoursModal() {
+      document.getElementById("submitHoursModal").classList.remove("hidden");
+    }
+
+    function hideSubmitHoursModal() {
+      document.getElementById("submitHoursModal").classList.add("hidden");
+      document.getElementById("submitHoursForm").reset();
+    }
+
+    async function handleSubmitHours(e) {
+      e.preventDefault();
+
+      const formData = new FormData();
+      formData.append(
+        "firstName",
+        document.getElementById("hoursFirstName").value
+      );
+      formData.append(
+        "lastName",
+        document.getElementById("hoursLastName").value
+      );
+      formData.append(
+        "schoolOrganization",
+        document.getElementById("hoursSchool").value
+      );
+      formData.append(
+        "activityName",
+        document.getElementById("activityName").value
+      );
+      formData.append(
+        "serviceDate",
+        document.getElementById("serviceDate").value
+      );
+      formData.append(
+        "serviceType",
+        document.getElementById("serviceType").value
+      );
+      formData.append("hours", document.getElementById("serviceHours").value);
+      formData.append(
+        "description",
+        document.getElementById("activityDescription").value
+      );
+      formData.append(
+        "isHistorical",
+        document.getElementById("isHistorical").checked
+      );
+
+      const proofFile = document.getElementById("proofOfService").files[0];
+      if (proofFile) {
+        formData.append("proofOfService", proofFile);
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/hours/submit`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showMessage("Hours submitted successfully!", "success");
+          hideSubmitHoursModal();
+          loadDashboardData();
+        } else {
+          showMessage(data.message || "Failed to submit hours", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    // Export Functions
+    async function exportVolunteerData() {
+      try {
+        const response = await fetch(`${API_BASE}/hours/export?format=json`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          downloadJSON(data, "volunteer_hours.json");
+          showMessage("Data exported successfully!", "success");
+        } else {
+          showMessage("Failed to export data", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    function downloadJSON(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Filter Functions
+    function filterHoursHistory() {
+      const status = document.getElementById("statusFilter").value;
+      const rows = document.querySelectorAll("#hoursHistoryTable tr");
+
+      rows.forEach((row) => {
+        if (row.children.length === 1) return; // Skip empty state row
+
+        const statusCell = row.children[3];
+        const statusText = statusCell.textContent.toLowerCase();
+
+        if (!status || statusText.includes(status)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    // Admin Functions
+    async function loadAdminPanel() {
+      document.getElementById("adminPanel").classList.remove("hidden");
+
+      try {
+        // Load admin stats
+        const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+
+        if (statsResponse.ok) {
+          const stats = await statsResponse.json();
+          document.getElementById("adminTotalVolunteers").textContent =
+            stats.totalVolunteers;
+          document.getElementById("adminTotalHours").textContent =
+            stats.totalHours;
+          document.getElementById("adminPendingSubmissions").textContent =
+            stats.pendingSubmissions;
+        }
+
+        // Load pending hours
+        const pendingResponse = await fetch(
+          `${API_BASE}/admin/pending-hours`,
+          {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        );
+
+        if (pendingResponse.ok) {
+          const pendingHours = await pendingResponse.json();
+          updateAdminPendingHours(pendingHours);
+        }
+      } catch (error) {
+        console.error("Failed to load admin data:", error);
+      }
+    }
+
+    function updateAdminPendingHours(pendingHours) {
+      const tbody = document.getElementById("adminPendingHours");
+
+      if (!pendingHours || pendingHours.length === 0) {
+        tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                            No pending hours to review
+                        </td>
+                    </tr>
+                `;
+        return;
+      }
+
+      tbody.innerHTML = pendingHours
+        .map(
+          (entry) => `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ${entry.volunteerId.profile.firstName} ${entry.volunteerId.profile.lastName
+            }
+                        <br>
+                        <span class="text-xs text-gray-500">${entry.volunteerId.email
+            }</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${entry.activityName
+            }</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${new Date(
+              entry.serviceDate
+            ).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${entry.hours
+            }</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${entry.serviceType
+            }</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <button onclick="approveHours('${entry._id
+            }')" class="bg-green-600 text-white px-3 py-1 rounded text-xs mr-1 hover:bg-green-700">
+                            Approve
+                        </button>
+                        <button onclick="rejectHours('${entry._id
+            }')" class="bg-red-600 text-white px-3 py-1 rounded text-xs hover:bg-red-700">
+                            Reject
+                        </button>
+                        <button onclick="viewHourDetails('${entry._id
+            }')" class="bg-blue-600 text-white px-3 py-1 rounded text-xs ml-1 hover:bg-blue-700">
+                            View
+                        </button>
+                    </td>
+                </tr>
+            `
+        )
+        .join("");
+    }
+
+    async function approveHours(hoursId) {
+      try {
+        const response = await fetch(
+          `${API_BASE}/admin/review-hours/${hoursId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ status: "approved" }),
+          }
+        );
+
+        if (response.ok) {
+          showMessage("Hours approved successfully!", "success");
+          loadAdminPanel();
+        } else {
+          showMessage("Failed to approve hours", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    async function rejectHours(hoursId) {
+      const reason = prompt(
+        "Please provide a reason for rejection (optional):"
+      );
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/admin/review-hours/${hoursId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              status: "rejected",
+              rejectionReason: reason,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          showMessage("Hours rejected successfully!", "success");
+          loadAdminPanel();
+        } else {
+          showMessage("Failed to reject hours", "error");
+        }
+      } catch (error) {
+        showMessage("Network error. Please try again.", "error");
+      }
+    }
+
+    // Utility Functions
+    function showMessage(message, type) {
+      const container = document.getElementById("messageContainer");
+      const messageDiv = document.createElement("div");
+
+      const bgColor = type === "success" ? "bg-green-500" : "bg-red-500";
+
+      messageDiv.innerHTML = `
+                <div class="${bgColor} text-white px-6 py-4 rounded-lg shadow-lg mb-4 relative">
+                    <span>${message}</span>
+                    <button class="absolute top-2 right-2 text-white hover:text-gray-200" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+
+      container.appendChild(messageDiv);
+
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        if (messageDiv.parentElement) {
+          messageDiv.remove();
+        }
+      }, 5000);
+    }
+
+    function showRejectionReason(reason) {
+      alert("Rejection Reason: " + reason);
+    }
+
+    // Helper function to set max date to today for service date
+    document.addEventListener("DOMContentLoaded", function () {
+      const today = new Date().toISOString().split("T")[0];
+      const serviceDateInput = document.getElementById("serviceDate");
+      if (serviceDateInput) {
+        serviceDateInput.max = today;
+      }
+    });
+  </script>
+</body>
+
+</html>
