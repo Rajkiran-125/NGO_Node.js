@@ -13,14 +13,8 @@ const storage = multer.diskStorage({
     cb(null, "uploads/proof/");
   },
   filename: (req, file, cb) => {
-    cb(
-      null,
-      Date.now() +
-        "-" +
-        Math.round(Math.random() * 1e9) +
-        path.extname(file.originalname)
-    );
-  },
+    cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
+  }
 });
 
 const upload = multer({
@@ -28,9 +22,7 @@ const upload = multer({
   limits: { fileSize: 10000000 }, // 10MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(
-      path.extname(file.originalname).toLowerCase()
-    );
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (mimetype && extname) {
@@ -38,7 +30,7 @@ const upload = multer({
     } else {
       cb(new Error("Only .png, .jpg, .jpeg and .pdf files are allowed!"));
     }
-  },
+  }
 });
 
 // Submit volunteer hours
@@ -60,10 +52,10 @@ router.post(
       "Notes of Kindness",
       "Workshops",
       "Donations",
-      "Other",
+      "Other"
     ]),
     body("hours").isFloat({ min: 0.1 }),
-    body("description").notEmpty(),
+    body("description").notEmpty()
   ],
   async (req, res) => {
     try {
@@ -81,7 +73,7 @@ router.post(
         serviceType,
         hours,
         description,
-        isHistorical,
+        isHistorical
       } = req.body;
 
       const volunteerHours = new VolunteerHours({
@@ -95,7 +87,7 @@ router.post(
         hours: parseFloat(hours),
         description,
         proofOfService: req.file ? req.file.filename : null,
-        isHistorical: isHistorical === "true",
+        isHistorical: isHistorical === "true"
       });
 
       await volunteerHours.save();
@@ -107,8 +99,8 @@ router.post(
           activityName: volunteerHours.activityName,
           hours: volunteerHours.hours,
           status: volunteerHours.status,
-          submittedAt: volunteerHours.submittedAt,
-        },
+          submittedAt: volunteerHours.submittedAt
+        }
       });
     } catch (error) {
       res.status(500).json({ message: "Server error", error: error.message });
@@ -126,7 +118,7 @@ router.get("/history", auth, async (req, res) => {
     if (startDate && endDate) {
       query.serviceDate = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $lte: new Date(endDate)
       };
     }
 
@@ -148,13 +140,11 @@ router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
     const hoursEntry = await VolunteerHours.findOne({
       _id: req.params.id,
       volunteerId: req.user._id,
-      status: "pending",
+      status: "pending"
     });
 
     if (!hoursEntry) {
-      return res
-        .status(404)
-        .json({ message: "Hours entry not found or already processed" });
+      return res.status(404).json({ message: "Hours entry not found or already processed" });
     }
 
     const updates = req.body;
@@ -162,15 +152,14 @@ router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
       updates.proofOfService = req.file.filename;
     }
 
-    const updatedEntry = await VolunteerHours.findByIdAndUpdate(
-      req.params.id,
-      updates,
-      { new: true, runValidators: true }
-    );
+    const updatedEntry = await VolunteerHours.findByIdAndUpdate(req.params.id, updates, {
+      new: true,
+      runValidators: true
+    });
 
     res.json({
       message: "Hours entry updated successfully",
-      entry: updatedEntry,
+      entry: updatedEntry
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -184,13 +173,13 @@ router.get("/export", auth, async (req, res) => {
 
     let query = {
       volunteerId: req.user._id,
-      status: "approved",
+      status: "approved"
     };
 
     if (startDate && endDate) {
       query.serviceDate = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $lte: new Date(endDate)
       };
     }
 
@@ -200,28 +189,59 @@ router.get("/export", auth, async (req, res) => {
       res.json(hours);
     } else {
       // Return CSV format
-      const csvHeaders =
-        "Activity Name,Service Date,Hours,Service Type,Description,Status\n";
+      const csvHeaders = "Activity Name,Service Date,Hours,Service Type,Description,Status\n";
       const csvData = hours
         .map(
-          (entry) =>
-            `"${entry.activityName}","${
-              entry.serviceDate.toISOString().split("T")[0]
-            }","${entry.hours}","${entry.serviceType}","${
-              entry.description
-            }","${entry.status}"`
+          entry =>
+            `"${entry.activityName}","${entry.serviceDate.toISOString().split("T")[0]}","${entry.hours}","${
+              entry.serviceType
+            }","${entry.description}","${entry.status}"`
         )
         .join("\n");
 
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=volunteer_hours.csv"
-      );
+      res.setHeader("Content-Disposition", "attachment; filename=volunteer_hours.csv");
       res.send(csvHeaders + csvData);
     }
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// GET single record for edit (pre-fill)
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // basic ObjectId guard (optional)
+    if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ message: "Invalid id" });
+    }
+
+    const entry = await VolunteerHours.findById(id)
+      .populate("volunteerId", "email firstName lastName") // adjust as needed
+      .populate("reviewedBy", "firstName lastName")
+      .lean();
+
+    if (!entry) {
+      return res.status(404).json({ message: "Volunteer hours not found" });
+    }
+
+    // Only owner or admin can fetch for edit
+    const isOwner =
+      entry.volunteerId && entry.volunteerId._id
+        ? entry.volunteerId._id.toString() === req.user._id.toString()
+        : entry.volunteerId?.toString() === req.user._id.toString();
+
+    const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+
+    return res.json({ data: entry });
+  } catch (error) {
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
