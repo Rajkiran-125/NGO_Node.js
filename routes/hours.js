@@ -245,4 +245,142 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
+// PATCH partial update (owner edits pending OR admin updates status)
+// Accepts JSON or multipart/form-data with optional proofOfService file
+router.patch(
+  "/:id",
+  auth,
+  upload.single("proofOfService"),
+  [
+    // optional validators (only validate if present)
+    body("serviceDate").optional().isISO8601().withMessage("Invalid date"),
+    body("serviceType")
+      .optional()
+      .isIn([
+        "Service Projects",
+        "Community Events",
+        "Food Rescues",
+        "NEST Tutors",
+        "Notes of Kindness",
+        "Workshops",
+        "Donations",
+        "Other"
+      ])
+      .withMessage("Invalid serviceType"),
+    body("hours").optional().isFloat({ min: 0.1 }).withMessage("Hours must be a number"),
+    body("status").optional().isIn(["pending", "approved", "rejected"]).withMessage("Invalid status"),
+    body("firstName").optional().notEmpty(),
+    body("lastName").optional().notEmpty(),
+    body("activityName").optional().notEmpty(),
+    body("schoolOrganization").optional().notEmpty(),
+    body("description").optional().notEmpty()
+  ],
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+        return res.status(400).json({ message: "Invalid id" });
+      }
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const entry = await VolunteerHours.findById(id);
+      if (!entry) {
+        return res.status(404).json({ message: "Hours entry not found" });
+      }
+
+      const isOwner = entry.volunteerId && entry.volunteerId.toString() === req.user._id.toString();
+      const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
+
+      // Owners can only edit their own entries when status is "pending"
+      if (!isAdmin) {
+        if (!isOwner) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+        if (entry.status !== "pending") {
+          return res.status(400).json({ message: "Only pending entries can be updated by owner" });
+        }
+      }
+
+      // Build updates only from allowed fields
+      const allowed = [
+        "firstName",
+        "lastName",
+        "schoolOrganization",
+        "activityName",
+        "serviceDate",
+        "serviceType",
+        "hours",
+        "description",
+        "isHistorical",
+        "rejectionReason"
+        // status handled below
+      ];
+
+      const updates = {};
+      for (const key of allowed) {
+        if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+          // convert types where appropriate
+          if (key === "serviceDate") updates.serviceDate = new Date(req.body.serviceDate);
+          else if (key === "hours") updates.hours = parseFloat(req.body.hours);
+          else if (key === "isHistorical")
+            updates.isHistorical = req.body.isHistorical === "true" || req.body.isHistorical === true;
+          else updates[key] = req.body[key];
+        }
+      }
+
+      // Handle uploaded file
+      if (req.file) {
+        updates.proofOfService = req.file.filename;
+      }
+
+      // Handle status changes:
+      // - Owner cannot change status (unless you want to allow), admin can
+      if (req.body.status !== undefined) {
+        const requestedStatus = req.body.status;
+        const validStatus = ["pending", "approved", "rejected"];
+        if (!validStatus.includes(requestedStatus)) {
+          return res.status(400).json({ message: "Invalid status" });
+        }
+
+        if (!isAdmin) {
+          // If you want owners to be able to set status back to pending, adjust here.
+          return res.status(403).json({ message: "Only admins can change status" });
+        }
+
+        updates.status = requestedStatus;
+        if (requestedStatus === "approved" || requestedStatus === "rejected") {
+          updates.reviewedAt = new Date();
+          updates.reviewedBy = req.user._id;
+        } else {
+          // pending
+          updates.reviewedAt = null;
+          updates.reviewedBy = null;
+        }
+      }
+
+      // Apply update
+      const updated = await VolunteerHours.findByIdAndUpdate(id, updates, {
+        new: true,
+        runValidators: true
+      });
+
+      return res.json({
+        message: "Hours entry updated successfully",
+        entry: updated
+      });
+    } catch (error) {
+      // Multer fileFilter error handling (file type)
+      if (error instanceof multer.MulterError || error.message?.includes("Only .png")) {
+        return res.status(400).json({ message: error.message });
+      }
+      return res.status(500).json({ message: "Server error", error: error.message });
+    }
+  }
+);
+
 module.exports = router;
