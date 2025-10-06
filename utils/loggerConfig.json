@@ -1,0 +1,17 @@
+{
+  "filePathDirctory": "Logs",
+  "AppName": "NGO",
+  "maxsize": "10m",
+  "maxdays": "2d",
+  "zippedArchive": true,
+  "logDisable": false,
+  "logDateTimeFormat": "YYYY-MM-DD HH:mm:ss:sss",
+  "debugDisable": false,
+  "infoDisable": false,
+  "errorDisable": false,
+  "warnDisable": false,
+  "adminDisable": true,
+  "timeZone": "Asia/India",
+  "rotatePeriod": "YYYY-MM-DD HH",
+  "containerName": ""
+}

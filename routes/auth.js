@@ -22,9 +22,12 @@ router.post(
   //   body("phoneNumber").notEmpty(),
   // ],
   async (req, res) => {
+    const route = "POST /register";
     try {
+      loggerFunction("info", `${route} - API execution started. Req Body=${JSON.stringify(req.body)}`);
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
         return res.status(400).json({ errors: errors.array() });
       }
 
@@ -38,11 +41,12 @@ router.post(
         phoneNumber,
         location,
         causesOfInterest,
-        referredBy,
+        referredBy
       } = req.body;
 
       const existingUser = await User.findOne({ email });
       if (existingUser) {
+        loggerFunction("warn", `${route} - User already exists. email=${email}`);
         return res.status(400).json({ message: "User already exists" });
       }
 
@@ -58,10 +62,10 @@ router.post(
           dateOfBirth,
           phoneNumber,
           location,
-          causesOfInterest: causesOfInterest || [],
+          causesOfInterest: causesOfInterest || []
         },
         referralCode,
-        referredBy,
+        referredBy
       });
 
       // Handle referral
@@ -69,10 +73,7 @@ router.post(
         const referrer = await User.findOne({ referralCode: referredBy });
         if (referrer) {
           referrer.referralCount += 1;
-          if (
-            referrer.referralCount >= 5 &&
-            !referrer.badges.includes("Social Butterfly")
-          ) {
+          if (referrer.referralCount >= 5 && !referrer.badges.includes("Social Butterfly")) {
             referrer.badges.push("Social Butterfly");
           }
           await referrer.save();
@@ -81,12 +82,11 @@ router.post(
 
       await user.save();
 
-      const token = jwt.sign(
-        { userId: user._id, role: user.role },
-        process.env.JWT_SECRET || "fallback_secret",
-        { expiresIn: "7d" }
-      );
-
+      const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "fallback_secret", {
+        expiresIn: "7d"
+      });
+      loggerFunction("debug", `${route} - User registered successfully. email=${user.email}`);
+      loggerFunction("info", `${route} - Response sent successfully.`);
       res.status(201).json({
         message: "User registered successfully",
         token,
@@ -94,10 +94,11 @@ router.post(
           id: user._id,
           email: user.email,
           role: user.role,
-          profile: user.profile,
-        },
+          profile: user.profile
+        }
       });
     } catch (error) {
+      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -108,29 +109,30 @@ router.post(
   "/login",
   // [body("email").isEmail(), body("password").notEmpty()],
   async (req, res) => {
+    const route = "POST /login";
     try {
-
-      console.log('Inside Auth Login')
+      loggerFunction("info", `${route} - API execution started. Req Body=${JSON.stringify(req.body)}`);
+      // console.log("Inside Auth Login");
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
         return res.status(400).json({ errors: errors.array() });
       }
 
-
       const { email, password } = req.body;
-
 
       const user = await User.findOne({ email });
       if (!user || !(await user.comparePassword(password))) {
+        loggerFunction("warn", `${route} - Invalid login attempt for email=${email}`);
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const token = jwt.sign(
-        { userId: user._id, role: user.role },
-        process.env.JWT_SECRET || "fallback_secret",
-        { expiresIn: "7d" }
-      );
+      const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "fallback_secret", {
+        expiresIn: "7d"
+      });
 
+      loggerFunction("info", `${route} - Response sent successfully.`);
+      loggerFunction("debug", `${route} - Login successful for email=${email}`);
       res.json({
         message: "Login successful",
         token,
@@ -142,10 +144,11 @@ router.post(
           totalHours: user.totalHours,
           thisYearHours: user.thisYearHours,
           tier: user.tier,
-          badges: user.badges,
-        },
+          badges: user.badges
+        }
       });
     } catch (error) {
+      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
