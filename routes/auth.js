@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
 const router = express.Router();
+const loggerFunction = require("../utils/loggerFunction");
 
 // Generate unique referral code
 const generateReferralCode = () => {
@@ -24,7 +25,8 @@ router.post(
   async (req, res) => {
     const route = "POST /register";
     try {
-      loggerFunction("info", `${route} - API execution started. Req Body=${JSON.stringify(req.body)}`);
+      loggerFunction("info", `${route} - API execution started.`);
+      loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
@@ -111,7 +113,8 @@ router.post(
   async (req, res) => {
     const route = "POST /login";
     try {
-      loggerFunction("info", `${route} - API execution started. Req Body=${JSON.stringify(req.body)}`);
+      loggerFunction("info", `${route} - API execution started.`);
+      loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
       // console.log("Inside Auth Login");
       const errors = validationResult(req);
       if (!errors.isEmpty()) {

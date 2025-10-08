@@ -28,10 +28,8 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
 router.put("/review-hours/:id", adminAuth, async (req, res) => {
   const route = "PUT /review-hours/:id";
   try {
-    loggerFunction(
-      "info",
-      `${route} - API execution started. Id=${req.params.id} request body=${JSON.stringify(req.body)}`
-    );
+    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+    loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
     const { status, rejectionReason } = req.body;
     loggerFunction("debug", `PUT /review-hours, Request : {req.params.id} - {req.body}`);
     if (!["approved", "rejected"].includes(status)) {

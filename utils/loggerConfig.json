@@ -2,7 +2,6 @@
   "filePathDirctory": "Logs",
   "AppName": "NGO",
   "maxsize": "10m",
-  "maxdays": "2d",
   "zippedArchive": true,
   "logDisable": false,
   "logDateTimeFormat": "YYYY-MM-DD HH:mm:ss:sss",

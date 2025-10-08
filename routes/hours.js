@@ -6,6 +6,7 @@ const { auth } = require("../middleware/auth");
 const VolunteerHours = require("../models/VolunteerHours");
 const User = require("../models/User");
 const router = express.Router();
+const loggerFunction = require("../utils/loggerFunction");
 
 // Configure multer for proof of service uploads
 const storage = multer.diskStorage({
@@ -58,9 +59,16 @@ router.post(
     body("description").notEmpty()
   ],
   async (req, res) => {
+    const route = "POST /submit";
     try {
+      loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+      loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        loggerFunction(
+          "warn",
+          `${route} - Validation failed. userId=${req.user._id} errors=${JSON.stringify(errors.array())}`
+        );
         return res.status(400).json({ errors: errors.array() });
       }
 
@@ -92,6 +100,11 @@ router.post(
 
       await volunteerHours.save();
 
+      loggerFunction("info", `${route} - Response sent successfully.`);
+      loggerFunction(
+        "debug",
+        `${route} - Volunteer hours submitted successfully. submissionId=${volunteerHours._id} userId=${req.user._id}`
+      );
       res.status(201).json({
         message: "Volunteer hours submitted successfully",
         submission: {
@@ -103,6 +116,7 @@ router.post(
         }
       });
     } catch (error) {
+      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -110,7 +124,10 @@ router.post(
 
 // Get volunteer hours history
 router.get("/history", auth, async (req, res) => {
+  const route = "GET /history";
   try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming Query: ${JSON.stringify(req.query)}`);
     const { startDate, endDate, status } = req.query;
 
     let query = { volunteerId: req.user._id };
@@ -128,15 +145,29 @@ router.get("/history", auth, async (req, res) => {
 
     const hours = await VolunteerHours.find(query).sort({ submittedAt: -1 });
 
+    loggerFunction("info", `${route} - Response sent successfully.`);
+    loggerFunction(
+      "debug",
+      `${route} - Response sent successfully. userId=${req.user._id}, Data=${JSON.stringify(hours)}`
+    );
     res.json(hours);
   } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
 // Update volunteer hours (before approval)
 router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
+  const route = "PUT /:id";
   try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "debug",
+      `${route} - userId= ${req.user?._id}, Params: ${JSON.stringify(
+        req.params
+      )}, Incoming request body=${JSON.stringify(req.body)}`
+    );
     const hoursEntry = await VolunteerHours.findOne({
       _id: req.params.id,
       volunteerId: req.user._id,
@@ -144,6 +175,7 @@ router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
     });
 
     if (!hoursEntry) {
+      loggerFunction("warn", `${route} - Hours entry not found or already processed for ID ${req.params.id}`);
       return res.status(404).json({ message: "Hours entry not found or already processed" });
     }
 
@@ -157,18 +189,27 @@ router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
       runValidators: true
     });
 
+    loggerFunction("info", `${route} - Response sent successfully.`);
+    loggerFunction(
+      "debug",
+      `${route} - Hours entry updated successfully. userId=${req.user._id}, Data=${JSON.stringify(updatedEntry)}`
+    );
     res.json({
       message: "Hours entry updated successfully",
       entry: updatedEntry
     });
   } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
 // Export volunteer hours
 router.get("/export", auth, async (req, res) => {
+  const route = "GET /export";
   try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - userId= ${req.user?._id}, Incoming Query: ${JSON.stringify(req.query)}`);
     const { startDate, endDate, format } = req.query;
 
     let query = {
@@ -204,17 +245,22 @@ router.get("/export", auth, async (req, res) => {
       res.send(csvHeaders + csvData);
     }
   } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
 // GET single record for edit (pre-fill)
 router.get("/:id", auth, async (req, res) => {
+  const route = "GET /:id";
   try {
+    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+    loggerFunction("debug", `${route} - Incoming request. Id=${req.params.id}, userId=${req.user._id}`);
     const { id } = req.params;
 
     // basic ObjectId guard (optional)
     if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+      loggerFunction("warn", `${route} - Invalid id provided. Id=${id}`);
       return res.status(400).json({ message: "Invalid id" });
     }
 
@@ -224,6 +270,7 @@ router.get("/:id", auth, async (req, res) => {
       .lean();
 
     if (!entry) {
+      loggerFunction("warn", `${route} - Volunteer hours not found. Id=${id}`);
       return res.status(404).json({ message: "Volunteer hours not found" });
     }
 
@@ -236,11 +283,18 @@ router.get("/:id", auth, async (req, res) => {
     const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
 
     if (!isOwner && !isAdmin) {
+      loggerFunction(
+        "warn",
+        `${route} - Forbidden access attempt. Id=${id} userId=${req.user._id} isOwner=${isOwner} isAdmin=${isAdmin}`
+      );
       return res.status(403).json({ message: "Forbidden" });
     }
 
+    loggerFunction("info", `${route} - Response sent successfully.`);
+    loggerFunction("debug", `${route} - Response body. Id=${id} Data=${JSON.stringify(entry)}`);
     return res.json({ data: entry });
   } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -276,22 +330,35 @@ router.patch(
     body("description").optional().notEmpty()
   ],
   async (req, res) => {
+    const route = "PATCH /:id";
     try {
+      loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+      loggerFunction(
+        "debug",
+        `${route} - Incoming request. Id=${req.params.id}, userId=${req.user._id}, body=${JSON.stringify({
+          ...req.body,
+          proofOfService: req.file ? "(file uploaded)" : undefined
+        })}`
+      );
       const { id } = req.params;
 
       if (!id || !id.match(/^[0-9a-fA-F]{24}$/)) {
+        loggerFunction("warn", `${route} - Invalid id provided. Id=${id}`);
         return res.status(400).json({ message: "Invalid id" });
       }
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        loggerFunction("warn", `${route} - Validation failed. Id=${id} errors=${JSON.stringify(errors.array())}`);
         return res.status(400).json({ errors: errors.array() });
       }
 
       const entry = await VolunteerHours.findById(id);
       if (!entry) {
+        loggerFunction("warn", `${route} - Hours entry not found. Id=${id}`);
         return res.status(404).json({ message: "Hours entry not found" });
       }
+      loggerFunction("debug", `${route} - Hours entry found. Id=${id} Data=${JSON.stringify(entry)}`);
 
       const isOwner = entry.volunteerId && entry.volunteerId.toString() === req.user._id.toString();
       const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
@@ -299,9 +366,17 @@ router.patch(
       // Owners can only edit their own entries when status is "pending"
       if (!isAdmin) {
         if (!isOwner) {
+          loggerFunction(
+            "warn",
+            `${route} - Forbidden update attempt. Id=${id} requester=${req.user._id} reason=not_owner`
+          );
           return res.status(403).json({ message: "Forbidden" });
         }
         if (entry.status !== "pending") {
+          loggerFunction(
+            "warn",
+            `${route} - Owner attempted to update non-pending entry. Id=${id} requester=${req.user._id} currentStatus=${entry.status}`
+          );
           return res.status(400).json({ message: "Only pending entries can be updated by owner" });
         }
       }
@@ -335,6 +410,7 @@ router.patch(
 
       // Handle uploaded file
       if (req.file) {
+        loggerFunction("debug", `${route} - File uploaded. Id=${id} filename=${req.file.filename}`);
         updates.proofOfService = req.file.filename;
       }
 
@@ -344,10 +420,15 @@ router.patch(
         const requestedStatus = req.body.status;
         const validStatus = ["pending", "approved", "rejected"];
         if (!validStatus.includes(requestedStatus)) {
+          loggerFunction("warn", `${route} - Invalid status provided. Id=${id} status=${requestedStatus}`);
           return res.status(400).json({ message: "Invalid status" });
         }
 
         if (!isAdmin) {
+          loggerFunction(
+            "warn",
+            `${route} - Non-admin attempted to change status. Id=${id} requester=${req.user._id} status=${requestedStatus}`
+          );
           // If you want owners to be able to set status back to pending, adjust here.
           return res.status(403).json({ message: "Only admins can change status" });
         }
@@ -356,10 +437,15 @@ router.patch(
         if (requestedStatus === "approved" || requestedStatus === "rejected") {
           updates.reviewedAt = new Date();
           updates.reviewedBy = req.user._id;
+          loggerFunction(
+            "debug",
+            `${route} - Status change will set reviewedAt/reviewedBy. Id=${id} newStatus=${requestedStatus} reviewer=${req.user._id}`
+          );
         } else {
           // pending
           updates.reviewedAt = null;
           updates.reviewedBy = null;
+          loggerFunction("debug", `${route} - Status set to pending -> clearing review metadata. Id=${id}`);
         }
       }
 
@@ -369,6 +455,8 @@ router.patch(
         runValidators: true
       });
 
+      loggerFunction("debug", `${route} - Hours entry updated successfully. Id=${id} Data=${JSON.stringify(updated)}`);
+      loggerFunction("info", `${route} - Response sent successfully.`);
       return res.json({
         message: "Hours entry updated successfully",
         entry: updated
@@ -376,8 +464,10 @@ router.patch(
     } catch (error) {
       // Multer fileFilter error handling (file type)
       if (error instanceof multer.MulterError || error.message?.includes("Only .png")) {
+        loggerFunction("warn", `${route} - Multer/file error. Id=${req.params.id} error=${error.message}`);
         return res.status(400).json({ message: error.message });
       }
+      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
       return res.status(500).json({ message: "Server error", error: error.message });
     }
   }

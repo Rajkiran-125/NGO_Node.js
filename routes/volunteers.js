@@ -114,10 +114,8 @@ router.get("/dashboard", auth, async (req, res) => {
 router.put("/profile", auth, upload.single("profilePicture"), async (req, res) => {
   const route = "PUT /profile";
   try {
-    loggerFunction(
-      "info",
-      `${route} - API execution started. userId=${req.user._id} Req Body=${JSON.stringify(req.body)}`
-    );
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
     const updates = req.body;
 
     if (req.file) {
@@ -153,10 +151,8 @@ router.put("/profile", auth, upload.single("profilePicture"), async (req, res) =
 router.put("/notifications", auth, async (req, res) => {
   const route = "PUT /notifications";
   try {
-    loggerFunction(
-      "info",
-      `${route} - API execution started. userId=${req.user._id} Req Body=${JSON.stringify(req.body)}`
-    );
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
     const { weeklyDigest, monthlyDigest, approvalNotifications, achievementNotifications } = req.body;
 
     await User.findByIdAndUpdate(req.user._id, {
