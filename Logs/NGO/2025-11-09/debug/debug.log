@@ -1,0 +1,6 @@
+2025-11-09 15:54:54:5454 : | debug | "POST /login - Incoming request body={\"email\":\"john.doe@example.com\",\"password\":\"password123\"}" |
+2025-11-09 15:54:55:5555 : | debug | "POST /login - Login successful for email=john.doe@example.com" |
+2025-11-09 15:58:14:1414 : | debug | "POST /hours/export - Date range mode: 2025-09-03T18:30:00.000Z to 2025-11-09T18:29:59.999Z" |
+2025-11-09 15:58:14:1414 : | debug | "POST /hours/export - Response preview: {\n  \"totalHours\": 0,\n  \"sample\": []\n}" |
+2025-11-09 15:59:24:2424 : | debug | "POST /hours/export - Single-date mode: 2025-09-03T18:30:00.000Z" |
+2025-11-09 15:59:24:2424 : | debug | "POST /hours/export - Response preview: {\n  \"totalHours\": 0,\n  \"sample\": []\n}" |

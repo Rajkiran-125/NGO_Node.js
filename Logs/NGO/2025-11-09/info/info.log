@@ -1,0 +1,6 @@
+2025-11-09 15:54:54:5454 : | info | "POST /login - API execution started." |
+2025-11-09 15:54:55:5555 : | info | "POST /login - Response sent successfully." |
+2025-11-09 15:58:14:1414 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-09 15:58:14:1414 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |
+2025-11-09 15:59:24:2424 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-09 15:59:24:2424 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |

@@ -5,6 +5,7 @@ const { auth } = require("../middleware/auth");
 const User = require("../models/User");
 const VolunteerHours = require("../models/VolunteerHours");
 const router = express.Router();
+const loggerFunction = require("../utils/loggerFunction");
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -170,6 +171,79 @@ router.put("/notifications", auth, async (req, res) => {
       `${route} - Notification preferences updated successfully: ${JSON.stringify(req.body, null, 2)}`
     );
     res.json({ message: "Notification preferences updated successfully" });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Download dashboard data
+router.post("/hours/export", auth, async (req, res) => {
+  const route = "POST /hours/export";
+  try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+
+    const { fromDate, toDate } = req.body;
+
+    if (!fromDate) {
+      loggerFunction("warn", `${route} - Missing fromDate. userId=${req.user._id}`);
+      return res.status(400).json({ message: "fromDate is required" });
+    }
+
+    // Build date filters
+    const from = new Date(fromDate);
+    let dateFilter = {};
+
+    if (toDate) {
+      // Range mode
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999);
+      dateFilter = { $gte: from, $lte: to };
+      loggerFunction("debug", `${route} - Date range mode: ${from.toISOString()} to ${to.toISOString()}`);
+    } else {
+      // Single-day mode
+      const startOfDay = new Date(from);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(from);
+      endOfDay.setHours(23, 59, 59, 999);
+      dateFilter = { $gte: startOfDay, $lte: endOfDay };
+      loggerFunction("debug", `${route} - Single-date mode: ${startOfDay.toISOString()}`);
+    }
+
+    // Query only approved entries
+    const match = {
+      volunteerId: req.user._id,
+      status: "approved",
+      serviceDate: dateFilter
+    };
+
+    // Fetch approved volunteer hours
+    const approvedHours = await VolunteerHours.find(match)
+      .sort({ serviceDate: -1 })
+      .select("activityName serviceDate hours status")
+      .lean();
+
+    // Calculate total approved hours
+    const totalHours = approvedHours.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+
+    // Format response
+    const responseData = approvedHours.map(entry => ({
+      serviceActivity: entry.activityName,
+      serviceDate: entry.serviceDate,
+      numberOfHours: entry.hours,
+      status: "Approved"
+    }));
+
+    loggerFunction("info", `${route} - Retrieved ${approvedHours.length} approved records for userId=${req.user._id}.`);
+    loggerFunction(
+      "debug",
+      `${route} - Response preview: ${JSON.stringify({ totalHours, sample: responseData.slice(0, 2) }, null, 2)}`
+    );
+
+    res.json({
+      records: responseData,
+      totalHours
+    });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });

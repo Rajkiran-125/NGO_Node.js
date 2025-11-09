@@ -172,4 +172,92 @@ router.get("/stats", adminAuth, async (req, res) => {
   }
 });
 
+// Download Dashboard data
+router.post("/volunteer-report", adminAuth, async (req, res) => {
+  const route = "POST /volunteer-report";
+  try {
+    const { type, serviceType, fromDate, toDate, volunteerId } = req.body;
+
+    // base match filter
+    const match = {
+      status: "approved"
+    };
+
+    // ✅ Date range filter
+    if (fromDate && toDate) {
+      match.serviceDate = {
+        $gte: new Date(fromDate),
+        $lte: new Date(toDate)
+      };
+    } else if (fromDate) {
+      // single-day support
+      const from = new Date(fromDate);
+      const to = new Date(fromDate);
+      to.setHours(23, 59, 59, 999);
+      match.serviceDate = { $gte: from, $lte: to };
+    }
+
+    // ✅ Filter by serviceType only if provided (non-empty string)
+    if (serviceType && serviceType.trim() !== "") {
+      match.serviceType = serviceType;
+    }
+
+    // ✅ CASE 1: Report for serviceType summary
+    if (type === "serviceType") {
+      const summary = await VolunteerHours.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: "$serviceType",
+            totalVolunteers: { $addToSet: "$volunteerId" },
+            totalHours: { $sum: "$hours" }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            serviceType: "$_id",
+            totalVolunteers: { $size: "$totalVolunteers" },
+            totalHours: 1
+          }
+        },
+        { $sort: { serviceType: 1 } }
+      ]);
+
+      return res.status(200).json({
+        message: "Service type report fetched successfully",
+        data: summary
+      });
+    }
+
+    // ✅ CASE 2: Report for specific volunteer
+    if (type === "volunteer") {
+      const volunteerRecords = await VolunteerHours.find(match)
+        .populate("volunteerId", "firstName lastName")
+        .sort({ serviceDate: -1 })
+        .select("activityName serviceType serviceDate hours")
+        .lean();
+
+      const data = volunteerRecords.map(r => ({
+        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+        serviceType: r.serviceType,
+        serviceActivity: r.activityName,
+        dateOfService: r.serviceDate,
+        totalHours: r.hours
+      }));
+
+      return res.status(200).json({
+        message: "Volunteer report fetched successfully",
+        data
+      });
+    }
+
+    // default fallback
+    res.status(400).json({ message: "Invalid report type" });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 module.exports = router;

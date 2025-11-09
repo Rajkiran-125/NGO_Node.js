@@ -13,10 +13,10 @@ const userSchema = new mongoose.Schema({
     dateOfBirth: { type: Date, required: true },
     location: {
       state: String,
-      country: String,
+      country: String
     },
     phoneNumber: { type: String, required: true },
-    causesOfInterest: [String],
+    causesOfInterest: [String]
   },
   totalHours: { type: Number, default: 0 },
   thisYearHours: { type: Number, default: 0 },
@@ -29,9 +29,9 @@ const userSchema = new mongoose.Schema({
     weeklyDigest: { type: Boolean, default: true },
     monthlyDigest: { type: Boolean, default: true },
     approvalNotifications: { type: Boolean, default: true },
-    achievementNotifications: { type: Boolean, default: true },
+    achievementNotifications: { type: Boolean, default: true }
   },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }
 });
 
 userSchema.pre("save", async function (next) {
