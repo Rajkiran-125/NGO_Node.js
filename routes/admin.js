@@ -204,6 +204,7 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
 
     // ✅ CASE 1: Report for serviceType summary
     if (type === "serviceType") {
+      const VOLUNTEER_HOURLY_RATE = 34.79;
       const summary = await VolunteerHours.aggregate([
         { $match: match },
         {
@@ -218,7 +219,8 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
             _id: 0,
             serviceType: "$_id",
             totalVolunteers: { $size: "$totalVolunteers" },
-            totalHours: 1
+            totalHours: 1,
+            totalValue: { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }
           }
         },
         { $sort: { serviceType: 1 } }

@@ -5,31 +5,54 @@ const { auth } = require("../middleware/auth");
 const User = require("../models/User");
 const VolunteerHours = require("../models/VolunteerHours");
 const router = express.Router();
+const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
 
-// Configure multer for file uploads
+// // Configure multer for file uploads
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     cb(null, "uploads/");
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
+//   }
+// });
+
+// const upload = multer({
+//   storage: storage,
+//   limits: { fileSize: 5000000 }, // 5MB
+//   fileFilter: (req, file, cb) => {
+//     const allowedTypes = /jpeg|jpg|png|pdf/;
+//     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+//     const mimetype = allowedTypes.test(file.mimetype);
+
+//     if (mimetype && extname) {
+//       return cb(null, true);
+//     } else {
+//       cb(new Error("Only .png, .jpg, .jpeg and .pdf files are allowed!"));
+//     }
+//   }
+// });
+
+const uploadDir = path.join(__dirname, "../uploads/userProfilePictures");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5000000 }, // 5MB
+  storage,
   fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error("Only .png, .jpg, .jpeg and .pdf files are allowed!"));
-    }
+    const allowed = /jpeg|jpg|png|gif/;
+    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
+    const mime = allowed.test(file.mimetype);
+    if (ext && mime) cb(null, true);
+    else cb(new Error("Only images are allowed!"));
   }
 });
 
@@ -107,6 +130,24 @@ router.get("/dashboard", auth, async (req, res) => {
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Get profile details
+router.get("/profile", auth, async (req, res) => {
+  const route = "GET /profile";
+  try {
+    const userId = req.user._id; // Extracted from token
+
+    const user = await User.findById(userId).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.status(200).json({
+      message: "User profile fetched successfully",
+      user
+    });
+  } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -243,6 +284,82 @@ router.post("/hours/export", auth, async (req, res) => {
     res.json({
       records: responseData,
       totalHours
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Personal Volunteer Dashboard
+router.get("/summary", auth, async (req, res) => {
+  const route = "GET /volunteer/summary";
+  try {
+    const VOLUNTEER_HOURLY_RATE = 34.79;
+
+    loggerFunction("info", `${route} - Fetching volunteer summary. volunteerId=${id}`);
+
+    // Lifetime approved hours
+    const lifetimeAgg = await VolunteerHours.aggregate([
+      { $match: { volunteerId: req.user._id, status: "approved" } },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$hours" }
+        }
+      }
+    ]);
+    const lifetimeHours = lifetimeAgg[0]?.totalHours || 0;
+
+    // Current year approved hours
+    const currentYear = new Date().getFullYear();
+    const yearAgg = await VolunteerHours.aggregate([
+      {
+        $match: {
+          volunteerId: req.user._id,
+          status: "approved",
+          serviceDate: {
+            $gte: new Date(currentYear, 0, 1),
+            $lt: new Date(currentYear + 1, 0, 1)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalHours: { $sum: "$hours" }
+        }
+      }
+    ]);
+    const currentYearHours = yearAgg[0]?.totalHours || 0;
+
+    // Calculate value of service
+    const valueOfService = Number((lifetimeHours * VOLUNTEER_HOURLY_RATE).toFixed(2));
+
+    // Determine recognition tier
+    let recognitionTier = "None";
+    if (lifetimeHours >= 250) recognitionTier = "Legacy Leader";
+    else if (lifetimeHours >= 150) recognitionTier = "Service Champion";
+    else if (lifetimeHours >= 100) recognitionTier = "Change Catalyst";
+    else if (lifetimeHours >= 50) recognitionTier = "Kindness Ambassador";
+
+    // Response payload
+    const response = {
+      volunteerId: req.user._id,
+      name: `${volunteer.profile.firstName} ${volunteer.profile.lastName}`,
+      email: volunteer.email,
+      lifetimeHours,
+      currentYearHours,
+      valueOfService,
+      recognitionTier
+    };
+
+    loggerFunction("info", `${route} - Summary generated successfully.`);
+    loggerFunction("debug", `${route} - Response: ${JSON.stringify(response, null, 2)}`);
+
+    res.status(200).json({
+      message: "Volunteer summary fetched successfully",
+      data: response
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
