@@ -262,4 +262,42 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
   }
 });
 
+// Admin Dashboard
+router.get("/summary", adminAuth, async (req, res) => {
+  const route = "GET /admin/summary";
+  try {
+    loggerFunction("info", `${route} - Execution started. userId=${req.user._id}`);
+
+    // 1️⃣ Total Volunteers
+    const totalVolunteers = await User.countDocuments({ role: "volunteer" });
+
+    // 2️⃣ Total Approved Hours
+    const approvedRecords = await VolunteerHours.find({ status: "approved" });
+    const totalHours = approvedRecords.reduce((sum, record) => sum + record.hours, 0);
+
+    // 3️⃣ Value of Service ($34.79 per hour)
+    const valueOfService = (totalHours * 34.79).toFixed(2);
+
+    // 4️⃣ Pending Submissions
+    const pendingSubmissions = await VolunteerHours.countDocuments({ status: "pending" });
+
+    const summary = {
+      totalVolunteers,
+      totalHours,
+      valueOfService: `$${valueOfService}`,
+      pendingSubmissions
+    };
+
+    loggerFunction("info", `${route} - Summary fetched successfully.`);
+    loggerFunction("debug", `${route} - Summary data: ${JSON.stringify(summary, null, 2)}`);
+
+    res.status(200).json({
+      message: "Admin summary fetched successfully",
+      summary
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 module.exports = router;

@@ -31,7 +31,11 @@ const userSchema = new mongoose.Schema({
     approvalNotifications: { type: Boolean, default: true },
     achievementNotifications: { type: Boolean, default: true }
   },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+
+  // ✅ For password reset
+  resetPasswordCode: String,
+  resetPasswordExpires: Date
 });
 
 userSchema.pre("save", async function (next) {

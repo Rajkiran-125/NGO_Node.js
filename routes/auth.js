@@ -7,6 +7,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
 
 // Generate unique referral code
 const generateReferralCode = () => {
@@ -273,5 +275,228 @@ router.post(
     }
   }
 );
+
+// // Forget Password
+// router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
+//   const route = "POST /forget-password";
+//   try {
+//     loggerFunction("info", `${route} - API execution started.`);
+//     loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
+
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
+//       return res.status(400).json({ errors: errors.array() });
+//     }
+
+//     const { email } = req.body;
+//     const user = await User.findOne({ email });
+
+//     if (!user) {
+//       loggerFunction("warn", `${route} - User not found for email=${email}`);
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // Generate reset token
+//     const resetToken = crypto.randomBytes(32).toString("hex");
+//     const resetTokenExpiry = Date.now() + parseInt(process.env.RESET_TOKEN_EXPIRY || 3600000);
+
+//     user.resetPasswordToken = resetToken;
+//     user.resetPasswordExpires = resetTokenExpiry;
+//     await user.save();
+
+//     // Send reset email
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+//     });
+
+//     const resetUrl = process.env.RESET_URL.replace("{resetToken}", resetToken);
+//     const mailOptions = {
+//       to: user.email,
+//       from: process.env.EMAIL_USER,
+//       subject: "Password Reset Request",
+//       html: `<p>Hello ${user.profile?.firstName || "Volunteer"},</p>
+//              <p>You requested a password reset. Click the link below to reset your password:</p>
+//              <a href="${resetUrl}">${resetUrl}</a>
+//              <p>This link will expire in 1 hour.</p>`
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     loggerFunction("info", `${route} - Reset email sent successfully for userId=${user._id}`);
+//     res.json({ message: "Password reset link sent to your email." });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// Reset Password
+// router.post("/reset-password/:token", async (req, res) => {
+//   const route = "POST /reset-password/:token";
+//   try {
+//     const { token } = req.params;
+//     const { password } = req.body;
+
+//     loggerFunction("info", `${route} - Execution started. token=${token}`);
+
+//     const user = await User.findOne({
+//       resetPasswordToken: token,
+//       resetPasswordExpires: { $gt: Date.now() } // Check token expiry
+//     });
+
+//     if (!user) {
+//       loggerFunction("warn", `${route} - Invalid or expired token.`);
+//       return res.status(400).json({ message: "Invalid or expired token" });
+//     }
+
+//     // ✅ Simply assign new password (it will be hashed automatically by pre('save'))
+//     user.password = password;
+//     user.resetPasswordToken = undefined;
+//     user.resetPasswordExpires = undefined;
+//     await user.save();
+
+//     loggerFunction("info", `${route} - Password reset successful for ${user.email}`);
+//     res.status(200).json({ message: "Password has been reset successfully" });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error: ${error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// Forget Password with Verification Code
+router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
+  const route = "POST /forget-password";
+  try {
+    loggerFunction("info", `${route} - API execution started.`);
+    loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      loggerFunction("warn", `${route} - User not found for email=${email}`);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Generate 6-digit numeric OTP
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetCodeExpiry = Date.now() + 3600000; // 1 hour
+
+    user.resetPasswordCode = resetCode;
+    user.resetPasswordExpires = resetCodeExpiry;
+    await user.save();
+
+    // Send reset email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    });
+
+    const resetUrl = process.env.RESET_URL.replace("{resetToken}", resetToken);
+    const mailOptions = {
+      to: user.email,
+      from: process.env.EMAIL_USER,
+      subject: "Password Reset Request",
+      html: `<p>Hello ${user.profile?.firstName || "Volunteer"},</p>
+             <p>Your password reset code is:</p>
+             <h2>${resetCode}</h2>
+             <p>This code will expire in 1 hour.</p>`
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    loggerFunction("info", `${route} - Reset email sent successfully for userId=${user._id}`);
+    res.json({ message: "Password reset link sent to your email." });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// routes/userRoutes.js
+
+router.post("/reset-password", async (req, res) => {
+  const route = "POST /reset-password";
+  try {
+    loggerFunction("info", `${route} - API execution started.`);
+    loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
+
+    const { email, code, newPassword, confirmPassword } = req.body;
+
+    if (!email || !code || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required." });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match." });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user || user.resetPasswordCode !== code || Date.now() > user.resetPasswordExpires) {
+      return res.status(400).json({ message: "Invalid or expired reset code." });
+    }
+
+    user.password = newPassword;
+
+    // Clear reset fields after successful reset
+    user.resetPasswordCode = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    loggerFunction("info", `${route} - Password reset successfully for userId=${user._id}`);
+    res.json({ message: "Password has been reset successfully." });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Change Password (Logged-in user)
+router.post("/change-password", auth, async (req, res) => {
+  const route = "POST /change-password";
+  try {
+    loggerFunction("info", `${route} - Execution started. userId=${req.user._id}`);
+
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const userId = req.user.id; // comes from authMiddleware
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "New passwords do not match" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await user.comparePassword(oldPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Old password is incorrect" });
+    }
+
+    // Set new password (auto-hash on save)
+    user.password = newPassword;
+    await user.save();
+
+    loggerFunction("info", `${route} - Password changed successfully for ${user.email}`);
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 module.exports = router;
