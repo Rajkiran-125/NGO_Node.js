@@ -460,43 +460,4 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-// Change Password (Logged-in user)
-router.post("/change-password", auth, async (req, res) => {
-  const route = "POST /change-password";
-  try {
-    loggerFunction("info", `${route} - Execution started. userId=${req.user._id}`);
-
-    const { oldPassword, newPassword, confirmPassword } = req.body;
-    const userId = req.user.id; // comes from authMiddleware
-
-    if (!oldPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ message: "New passwords do not match" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const isMatch = await user.comparePassword(oldPassword);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Old password is incorrect" });
-    }
-
-    // Set new password (auto-hash on save)
-    user.password = newPassword;
-    await user.save();
-
-    loggerFunction("info", `${route} - Password changed successfully for ${user.email}`);
-    res.status(200).json({ message: "Password changed successfully" });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
 module.exports = router;
