@@ -346,8 +346,8 @@ router.get("/summary", auth, async (req, res) => {
     // Response payload
     const response = {
       volunteerId: req.user._id,
-      name: `${volunteer.profile.firstName} ${volunteer.profile.lastName}`,
-      email: volunteer.email,
+      name: `${req.user.profile.firstName} ${req.user.profile.lastName}`,
+      email: req.user.email,
       lifetimeHours,
       currentYearHours,
       valueOfService,
