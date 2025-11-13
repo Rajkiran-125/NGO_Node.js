@@ -1,0 +1,13 @@
+2025-11-13 17:23:57:5757 : | info | "GET /history - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:23:57:5757 : | info | "GET /history - Response sent successfully." |
+2025-11-13 17:29:48:4848 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:29:48:4848 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |
+2025-11-13 17:29:53:5353 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:29:53:5353 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |
+2025-11-13 17:30:33:3333 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:30:33:3333 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |
+2025-11-13 17:32:36:3636 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:34:23:2323 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:35:12:1212 : | info | "POST /hours/export - Retrieved 0 approved records for userId=68c8353b700cf6aa8f97cb80." |
+2025-11-13 17:35:20:2020 : | info | "POST /hours/export - API execution started. userId=68c8353b700cf6aa8f97cb80" |
+2025-11-13 17:35:28:2828 : | info | "POST /hours/export - Retrieved 4 approved records for userId=68c8353b700cf6aa8f97cb80." |

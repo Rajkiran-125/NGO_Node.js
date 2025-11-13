@@ -297,7 +297,7 @@ router.get("/summary", auth, async (req, res) => {
   try {
     const VOLUNTEER_HOURLY_RATE = 34.79;
 
-    loggerFunction("info", `${route} - Fetching volunteer summary. volunteerId=${id}`);
+    loggerFunction("info", `${route} - Fetching volunteer summary. volunteerId=${req.user._id}`);
 
     // Lifetime approved hours
     const lifetimeAgg = await VolunteerHours.aggregate([
