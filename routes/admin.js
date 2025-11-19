@@ -11,7 +11,8 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
   try {
     loggerFunction("info", `${route} - API execution started.`);
     const pendingHours = await VolunteerHours.find({ status: "pending" })
-      .populate("volunteerId", "profile.firstName profile.lastName email")
+      // .populate("volunteerId", "profile.firstName profile.lastName email")
+      .populate("volunteerId", "profile.fullName email")
       .sort({ submittedAt: -1 });
 
     // loggerFunction("debug", `${route} - Response : ${pendingHours}`);
@@ -235,13 +236,15 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
     // ✅ CASE 2: Report for specific volunteer
     if (type === "volunteer") {
       const volunteerRecords = await VolunteerHours.find(match)
-        .populate("volunteerId", "firstName lastName")
+        // .populate("volunteerId", "firstName lastName")
+        .populate("volunteerId", "fullName")
         .sort({ serviceDate: -1 })
         .select("activityName serviceType serviceDate hours")
         .lean();
 
       const data = volunteerRecords.map(r => ({
-        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+        // volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+        volunteerName: `${r.volunteerId.fullName}`,
         serviceType: r.serviceType,
         serviceActivity: r.activityName,
         dateOfService: r.serviceDate,

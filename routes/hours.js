@@ -40,8 +40,9 @@ router.post(
   auth,
   upload.single("proofOfService"),
   [
-    body("firstName").notEmpty(),
-    body("lastName").notEmpty(),
+    // body("firstName").notEmpty(),
+    // body("lastName").notEmpty(),
+    body("fullName").notEmpty(),
     body("schoolOrganization").notEmpty(),
     body("activityName").notEmpty(),
     body("serviceDate").isISO8601(),
@@ -73,8 +74,9 @@ router.post(
       }
 
       const {
-        firstName,
-        lastName,
+        fullName,
+        // firstName,
+        // lastName,
         schoolOrganization,
         activityName,
         serviceDate,
@@ -86,8 +88,9 @@ router.post(
 
       const volunteerHours = new VolunteerHours({
         volunteerId: req.user._id,
-        firstName,
-        lastName,
+        // firstName,
+        // lastName,
+        fullName,
         schoolOrganization,
         activityName,
         serviceDate: new Date(serviceDate),
@@ -265,8 +268,8 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     const entry = await VolunteerHours.findById(id)
-      .populate("volunteerId", "email firstName lastName") // adjust as needed
-      .populate("reviewedBy", "firstName lastName")
+      .populate("volunteerId", "email fullName") // adjust as needed
+      .populate("reviewedBy", "fullName")
       .lean();
 
     if (!entry) {
@@ -323,8 +326,9 @@ router.patch(
       .withMessage("Invalid serviceType"),
     body("hours").optional().isFloat({ min: 0.1 }).withMessage("Hours must be a number"),
     body("status").optional().isIn(["pending", "approved", "rejected"]).withMessage("Invalid status"),
-    body("firstName").optional().notEmpty(),
-    body("lastName").optional().notEmpty(),
+    // body("firstName").optional().notEmpty(),
+    // body("lastName").optional().notEmpty(),
+    body("fullName").optional().notEmpty(),
     body("activityName").optional().notEmpty(),
     body("schoolOrganization").optional().notEmpty(),
     body("description").optional().notEmpty()
@@ -383,8 +387,9 @@ router.patch(
 
       // Build updates only from allowed fields
       const allowed = [
-        "firstName",
-        "lastName",
+        // "firstName",
+        // "lastName",
+        "fullName",
         "schoolOrganization",
         "activityName",
         "serviceDate",

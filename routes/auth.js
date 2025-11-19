@@ -144,8 +144,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
     const {
       email,
       password,
-      firstName,
-      lastName,
+      // firstName,
+      // lastName,
+      fullName,
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
@@ -176,8 +177,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       email,
       password,
       profile: {
-        firstName,
-        lastName,
+        // firstName,
+        // lastName,
+        fullName,
         schoolOrganization,
         dateOfBirth,
         phoneNumber,
@@ -405,7 +407,7 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
       to: user.email,
       from: process.env.EMAIL_USER,
       subject: "Password Reset Request",
-      html: `<p>Hello ${user.profile?.firstName || "Volunteer"},</p>
+      html: `<p>Hello ${user.profile?.fullName || "Volunteer"},</p>
              <p>Your password reset code is:</p>
              <h2>${resetCode}</h2>
              <p>This code will expire in 1 hour.</p>`

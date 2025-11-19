@@ -6,8 +6,9 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, enum: ["volunteer", "admin"], default: "volunteer" },
   profile: {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    // firstName: { type: String, required: true },
+    // lastName: { type: String, required: true },
+    fullName: { type: String, required: true },
     profilePicture: String,
     schoolOrganization: { type: String, required: true },
     dateOfBirth: { type: Date, required: true },
