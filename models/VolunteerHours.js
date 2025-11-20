@@ -9,7 +9,7 @@ const volunteerHoursSchema = new mongoose.Schema({
   // firstName: { type: String, required: true },
   // lastName: { type: String, required: true },
   fullName: { type: String, required: true },
-  schoolOrganization: { type: String, required: true },
+  // schoolOrganization: { type: String, required: true },
   activityName: { type: String, required: true },
   serviceDate: { type: Date, required: true },
   serviceType: {
