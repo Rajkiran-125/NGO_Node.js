@@ -15,14 +15,14 @@ const volunteerHoursSchema = new mongoose.Schema({
   serviceType: {
     type: String,
     enum: [
-      "Service Projects",
-      "Community Events",
-      "Food Rescues",
-      "NEST Tutors",
-      "Notes of Kindness",
-      "Workshops",
-      "Donations",
-      "Other"
+      "NEST4US Service Projects",
+      "NEST4US Community Events",
+      "NEST4US Food Rescues",
+      "NEST4US Tutors",
+      "NEST4US Notes of Kindness",
+      "NEST4US Workshops",
+      "NEST4US Donations",
+      "Others"
     ],
     required: true
   },
