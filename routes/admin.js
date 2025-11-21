@@ -5,6 +5,14 @@ const User = require("../models/User");
 const router = express.Router();
 const loggerFunction = require("../utils/loggerFunction");
 
+// Define tiers
+const TIERS = [
+  { name: "Kindness Ambassador", min: 0, max: 99, range: "50-99" },
+  { name: "Change Catalyst", min: 100, max: 149, range: "100-149" },
+  { name: "Service Champion", min: 150, max: 249, range: "150-249" },
+  { name: "Legacy Leader", min: 250, max: null, range: "250+" }
+];
+
 // Get pending hours for approval
 router.get("/pending-hours", adminAuth, async (req, res) => {
   const route = "GET /pending-hours";
@@ -303,4 +311,172 @@ router.get("/summary", adminAuth, async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+/**
+ * GET /admin/tiers
+ * Returns tier name, range, and count of volunteers for each tier
+ */
+router.get("/tiers", adminAuth, async (req, res) => {
+  const route = "GET /admin/tiers";
+  try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+
+    // Aggregate total approved hours per volunteer
+    const totals = await VolunteerHours.aggregate([
+      { $match: { status: "approved" } },
+      {
+        $group: {
+          _id: "$volunteerId",
+          totalHours: { $sum: "$hours" }
+        }
+      }
+    ]);
+
+    // Build counts per tier
+    const counts = TIERS.map(t => ({ tier: t.name, range: t.range, count: 0 }));
+
+    // Map totals to tiers
+    totals.forEach(tot => {
+      const hrs = tot.totalHours || 0;
+      for (let i = 0; i < TIERS.length; i++) {
+        const tier = TIERS[i];
+        if (tier.max === null) {
+          if (hrs >= tier.min) {
+            counts[i].count += 1;
+            break;
+          }
+        } else {
+          if (hrs >= tier.min && hrs <= tier.max) {
+            counts[i].count += 1;
+            break;
+          }
+        }
+      }
+    });
+
+    loggerFunction("info", `${route} - Tier counts computed.`);
+    loggerFunction("debug", `${route} - counts=${JSON.stringify(counts, null, 2)}`);
+
+    return res.status(200).json({
+      message: "Tier counts fetched successfully",
+      data: counts
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+/**
+ * POST /admin/tiers
+ * Returns list of users (id, fullName, totalHours) who fall into the given tier.
+ * tierName must match one of TIERS.name (case-insensitive).
+ */
+router.post("/tiers", adminAuth, async (req, res) => {
+  const route = "POST /admin/tiers";
+  try {
+    const tierName = req.body.tierName;
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id} tier=${tierName}`);
+
+    if (!tierName) {
+      return res.status(400).json({ message: "tierName is required" });
+    }
+
+    // Find matching tier (case-insensitive)
+    const tier = TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase());
+    if (!tier) {
+      return res.status(400).json({ message: "Invalid tier name" });
+    }
+
+    // Aggregation: compute total hours per volunteer, then filter by tier range,
+    // and lookup user info for each volunteerId.
+    const pipeline = [
+      { $match: { status: "approved" } },
+      {
+        $group: {
+          _id: "$volunteerId",
+          totalHours: { $sum: "$hours" }
+        }
+      },
+      // Filter by tier range
+      {
+        $match:
+          tier.max === null ? { totalHours: { $gte: tier.min } } : { totalHours: { $gte: tier.min, $lte: tier.max } }
+      },
+      // Lookup user details
+      {
+        $lookup: {
+          from: "users", // make sure collection name matches (usually 'users')
+          localField: "_id",
+          foreignField: "_id",
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      {
+        $project: {
+          _id: 0,
+          userId: "$user._id",
+          fullName: "$user.profile.fullName",
+          email: "$user.email",
+          totalHours: 1
+        }
+      },
+      { $sort: { fullName: 1 } } // alphabetical
+    ];
+
+    const rows = await VolunteerHours.aggregate(pipeline);
+
+    loggerFunction("info", `${route} - Found ${rows.length} users for tier=${tier.name}`);
+    loggerFunction("debug", `${route} - sample=${JSON.stringify(rows.slice(0, 5), null, 2)}`);
+
+    return res.status(200).json({
+      message: `Users in tier ${tier.name} fetched successfully`,
+      data: rows
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// Admin-only user detail fetch
+router.post("/user-details", adminAuth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId is required" });
+    }
+
+    const user = await User.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      userId: user._id,
+      fullName: user.profile?.fullName || "",
+      lifetimeHours: user.totalHours || 0,
+      dateOfBirth: user.profile?.dateOfBirth || null,
+      location: {
+        state: user.profile?.location?.state || "",
+        country: user.profile?.location?.country || ""
+      },
+      schoolOrganization: "", // ❗ you removed it, returning empty
+      phoneNumber: user.profile?.phoneNumber || "",
+      email: user.email,
+      causes: [], // ❗ keep empty for now as requested
+      profilePicture: user.profile?.profilePicture || ""
+    });
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
