@@ -417,7 +417,7 @@ router.post("/tiers", adminAuth, async (req, res) => {
         $project: {
           _id: 0,
           userId: "$user._id",
-          fullName: "$user.profile.fullName",
+          fullName: { $ifNull: ["$user.profile.fullName", ""] },
           email: "$user.email",
           totalHours: 1
         }
