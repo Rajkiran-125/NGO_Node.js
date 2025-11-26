@@ -66,16 +66,35 @@ router.get("/dashboard", auth, async (req, res) => {
       volunteerId: req.user._id
     }).sort({ submittedAt: -1 });
 
-    // Calculate tier based on total hours
-    let tier = "None";
-    if (user.totalHours >= 250) tier = "Legacy Leader";
-    else if (user.totalHours >= 150) tier = "Service Champion";
-    else if (user.totalHours >= 100) tier = "Change Catalyst";
-    else if (user.totalHours >= 50) tier = "Kindness Ambassador";
+    // Calculate total approved hours from VolunteerHours
+    const approvedHoursAgg = await VolunteerHours.aggregate([
+      {
+        $match: {
+          volunteerId: req.user._id,
+          status: "approved"
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$hours" }
+        }
+      }
+    ]);
 
-    // Update user tier if changed
-    if (user.tier !== tier) {
+    const approvedTotalHours = approvedHoursAgg[0]?.total || 0;
+
+    // Determine tier based on approved hours
+    let tier = "None";
+    if (approvedTotalHours >= 250) tier = "Legacy Leader";
+    else if (approvedTotalHours >= 150) tier = "Service Champion";
+    else if (approvedTotalHours >= 100) tier = "Change Catalyst";
+    else if (approvedTotalHours >= 50) tier = "Kindness Ambassador";
+
+    // Update user tier AND totalHours if changed
+    if (user.tier !== tier || user.totalHours !== approvedTotalHours) {
       user.tier = tier;
+      user.totalHours = approvedTotalHours; // important fix!
       await user.save();
     }
 

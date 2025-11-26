@@ -1,0 +1,26 @@
+2025-11-23 19:59:15:1515 : | info | "GET /admin/tiers - Tier counts computed." |
+2025-11-23 19:59:55:5555 : | info | "GET /admin/tiers - Tier counts computed." |
+2025-11-23 20:00:03:033 : | info | "POST /admin/tiers - Found 0 users in tier Kindness Ambassador" |
+2025-11-23 20:03:16:1616 : | info | "GET /admin/tiers - Tier counts computed successfully." |
+2025-11-23 20:03:33:3333 : | info | "GET /admin/tiers - Tier counts computed successfully." |
+2025-11-23 20:03:45:4545 : | info | "GET /admin/tiers - Tier counts computed successfully." |
+2025-11-23 20:07:00:000 : | info | "GET /users - Returned 4 users" |
+2025-11-23 20:07:02:022 : | info | "GET /users - Returned 4 users" |
+2025-11-23 20:07:03:033 : | info | "GET /users - Returned 4 users" |
+2025-11-23 20:07:07:077 : | info | "GET /users - Returned 4 users" |
+2025-11-23 20:08:24:2424 : | info | "GET /admin/tiers - Tier counts computed successfully." |
+2025-11-23 20:08:28:2828 : | info | "GET /admin/tiers - Tier counts computed successfully." |
+2025-11-23 20:09:21:2121 : | info | "POST /admin/tiers - Found 1 users in tier Change Catalyst" |
+2025-11-23 20:15:41:4141 : | info | "GET /users - Returned 4 users" |
+2025-11-23 21:22:34:3434 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:24:31:3131 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:26:36:3636 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:27:08:088 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:28:43:4343 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:29:36:3636 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:36:32:3232 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:36:33:3333 : | info | "POST /forget-password - Reset code email sent to rajjaiswar@gmail.com" |
+2025-11-23 21:38:27:2727 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:38:29:2929 : | info | "POST /forget-password - Reset code email sent to rajjaiswar@gmail.com" |
+2025-11-23 21:38:36:3636 : | info | "POST /forget-password - API execution started." |
+2025-11-23 21:38:36:3636 : | info | "POST /forget-password - Reset code email sent to rajjaiswar@gmail.com" |

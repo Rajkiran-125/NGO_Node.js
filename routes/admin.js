@@ -316,53 +316,87 @@ router.get("/summary", adminAuth, async (req, res) => {
  * GET /admin/tiers
  * Returns tier name, range, and count of volunteers for each tier
  */
+// router.get("/tiers", adminAuth, async (req, res) => {
+//   const route = "GET /admin/tiers";
+//   try {
+//     loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+
+//     // Aggregate total approved hours per volunteer
+//     const totals = await VolunteerHours.aggregate([
+//       { $match: { status: "approved" } },
+//       {
+//         $group: {
+//           _id: "$volunteerId",
+//           totalHours: { $sum: "$hours" }
+//         }
+//       }
+//     ]);
+
+//     // Build counts per tier
+//     const counts = TIERS.map(t => ({ tier: t.name, range: t.range, count: 0 }));
+
+//     // Map totals to tiers
+//     totals.forEach(tot => {
+//       const hrs = tot.totalHours || 0;
+//       for (let i = 0; i < TIERS.length; i++) {
+//         const tier = TIERS[i];
+//         if (tier.max === null) {
+//           if (hrs >= tier.min) {
+//             counts[i].count += 1;
+//             break;
+//           }
+//         } else {
+//           if (hrs >= tier.min && hrs <= tier.max) {
+//             counts[i].count += 1;
+//             break;
+//           }
+//         }
+//       }
+//     });
+
+//     loggerFunction("info", `${route} - Tier counts computed.`);
+//     loggerFunction("debug", `${route} - counts=${JSON.stringify(counts, null, 2)}`);
+
+//     return res.status(200).json({
+//       message: "Tier counts fetched successfully",
+//       data: counts
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     return res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+/**
+ * GET /admin/tiers
+ * Returns tier name, range, and count of volunteers for each tier
+ */
 router.get("/tiers", adminAuth, async (req, res) => {
   const route = "GET /admin/tiers";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction("info", `${route} - API execution started. adminId=${req.user._id}`);
 
-    // Aggregate total approved hours per volunteer
-    const totals = await VolunteerHours.aggregate([
-      { $match: { status: "approved" } },
-      {
-        $group: {
-          _id: "$volunteerId",
-          totalHours: { $sum: "$hours" }
-        }
-      }
-    ]);
+    // Count users per tier directly from User collection
+    const tierCounts = await Promise.all(
+      TIERS.map(async t => {
+        const count = await User.countDocuments({ tier: t.name });
+        return {
+          tier: t.name,
+          range: t.range,
+          count
+        };
+      })
+    );
 
-    // Build counts per tier
-    const counts = TIERS.map(t => ({ tier: t.name, range: t.range, count: 0 }));
-
-    // Map totals to tiers
-    totals.forEach(tot => {
-      const hrs = tot.totalHours || 0;
-      for (let i = 0; i < TIERS.length; i++) {
-        const tier = TIERS[i];
-        if (tier.max === null) {
-          if (hrs >= tier.min) {
-            counts[i].count += 1;
-            break;
-          }
-        } else {
-          if (hrs >= tier.min && hrs <= tier.max) {
-            counts[i].count += 1;
-            break;
-          }
-        }
-      }
-    });
-
-    loggerFunction("info", `${route} - Tier counts computed.`);
-    loggerFunction("debug", `${route} - counts=${JSON.stringify(counts, null, 2)}`);
+    loggerFunction("info", `${route} - Tier counts computed successfully.`);
+    loggerFunction("debug", `${route} - counts=${JSON.stringify(tierCounts, null, 2)}`);
 
     return res.status(200).json({
       message: "Tier counts fetched successfully",
-      data: counts
+      data: tierCounts
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -371,6 +405,78 @@ router.get("/tiers", adminAuth, async (req, res) => {
  * POST /admin/tiers
  * Returns list of users (id, fullName, totalHours) who fall into the given tier.
  * tierName must match one of TIERS.name (case-insensitive).
+ */
+// router.post("/tiers", adminAuth, async (req, res) => {
+//   const route = "POST /admin/tiers";
+//   try {
+//     const tierName = req.body.tierName;
+//     loggerFunction("info", `${route} - API execution started. userId=${req.user._id} tier=${tierName}`);
+
+//     if (!tierName) {
+//       return res.status(400).json({ message: "tierName is required" });
+//     }
+
+//     // Find matching tier (case-insensitive)
+//     const tier = TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase());
+//     if (!tier) {
+//       return res.status(400).json({ message: "Invalid tier name" });
+//     }
+
+//     // Aggregation: compute total hours per volunteer, then filter by tier range,
+//     // and lookup user info for each volunteerId.
+//     const pipeline = [
+//       { $match: { status: "approved" } },
+//       {
+//         $group: {
+//           _id: "$volunteerId",
+//           totalHours: { $sum: "$hours" }
+//         }
+//       },
+//       // Filter by tier range
+//       {
+//         $match:
+//           tier.max === null ? { totalHours: { $gte: tier.min } } : { totalHours: { $gte: tier.min, $lte: tier.max } }
+//       },
+//       // Lookup user details
+//       {
+//         $lookup: {
+//           from: "users", // make sure collection name matches (usually 'users')
+//           localField: "_id",
+//           foreignField: "_id",
+//           as: "user"
+//         }
+//       },
+//       { $unwind: "$user" },
+//       {
+//         $project: {
+//           _id: 0,
+//           userId: "$user._id",
+//           fullName: { $ifNull: ["$user.profile.fullName", ""] },
+//           email: "$user.email",
+//           totalHours: 1
+//         }
+//       },
+//       { $sort: { fullName: 1 } } // alphabetical
+//     ];
+
+//     const rows = await VolunteerHours.aggregate(pipeline);
+
+//     loggerFunction("info", `${route} - Found ${rows.length} users for tier=${tier.name}`);
+//     loggerFunction("debug", `${route} - sample=${JSON.stringify(rows.slice(0, 5), null, 2)}`);
+
+//     return res.status(200).json({
+//       message: `Users in tier ${tier.name} fetched successfully`,
+//       data: rows
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     return res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+/**
+ * POST /admin/tiers
+ * Fetch users who belong to a specific tier (from the saved tier field).
  */
 router.post("/tiers", adminAuth, async (req, res) => {
   const route = "POST /admin/tiers";
@@ -382,60 +488,61 @@ router.post("/tiers", adminAuth, async (req, res) => {
       return res.status(400).json({ message: "tierName is required" });
     }
 
-    // Find matching tier (case-insensitive)
     const tier = TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase());
     if (!tier) {
       return res.status(400).json({ message: "Invalid tier name" });
     }
 
-    // Aggregation: compute total hours per volunteer, then filter by tier range,
-    // and lookup user info for each volunteerId.
-    const pipeline = [
-      { $match: { status: "approved" } },
+    // 1️⃣ Fetch users whose saved tier matches
+    const users = await User.find(
+      { tier: tier.name },
+      {
+        _id: 1,
+        email: 1,
+        "profile.fullName": 1
+      }
+    );
+
+    if (users.length === 0) {
+      return res.status(200).json({ message: "No users in this tier", data: [] });
+    }
+
+    const userIds = users.map(u => u._id);
+
+    // 2️⃣ Compute approved hours for these users
+    const approvedHours = await VolunteerHours.aggregate([
+      { $match: { status: "approved", volunteerId: { $in: userIds } } },
       {
         $group: {
           _id: "$volunteerId",
-          totalHours: { $sum: "$hours" }
+          totalApprovedHours: { $sum: "$hours" }
         }
-      },
-      // Filter by tier range
-      {
-        $match:
-          tier.max === null ? { totalHours: { $gte: tier.min } } : { totalHours: { $gte: tier.min, $lte: tier.max } }
-      },
-      // Lookup user details
-      {
-        $lookup: {
-          from: "users", // make sure collection name matches (usually 'users')
-          localField: "_id",
-          foreignField: "_id",
-          as: "user"
-        }
-      },
-      { $unwind: "$user" },
-      {
-        $project: {
-          _id: 0,
-          userId: "$user._id",
-          fullName: { $ifNull: ["$user.profile.fullName", ""] },
-          email: "$user.email",
-          totalHours: 1
-        }
-      },
-      { $sort: { fullName: 1 } } // alphabetical
-    ];
+      }
+    ]);
 
-    const rows = await VolunteerHours.aggregate(pipeline);
+    // Convert to map for quick lookup
+    const hoursMap = {};
+    approvedHours.forEach(h => {
+      hoursMap[h._id.toString()] = h.totalApprovedHours;
+    });
 
-    loggerFunction("info", `${route} - Found ${rows.length} users for tier=${tier.name}`);
-    loggerFunction("debug", `${route} - sample=${JSON.stringify(rows.slice(0, 5), null, 2)}`);
+    // 3️⃣ Combine user + approved hours
+    const result = users
+      .map(u => ({
+        userId: u._id,
+        email: u.email,
+        fullName: u.profile.fullName || "",
+        totalApprovedHours: hoursMap[u._id.toString()] || 0
+      }))
+      // 4️⃣ Sort by approved hours DESC
+      .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours);
 
     return res.status(200).json({
-      message: `Users in tier ${tier.name} fetched successfully`,
-      data: rows
+      message: `Users in tier '${tier.name}' fetched successfully`,
+      data: result
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -476,6 +583,45 @@ router.post("/user-details", adminAuth, async (req, res) => {
       message: "Server error",
       error: error.message
     });
+  }
+});
+
+// GET /users – Get all users  ******FOR TESTING*********
+router.get("/users", async (req, res) => {
+  const route = "GET /users";
+  try {
+    const users = await User.find({})
+      .select("profile email totalHours thisYearHours tier badges createdAt")
+      .sort({ createdAt: -1 });
+
+    // Ensure fullName always present
+    const formatted = users.map(u => ({
+      userId: u._id,
+      email: u.email || "",
+      fullName: u.profile?.fullName || "", // <-- important
+      profile: {
+        fullName: u.profile?.fullName || "",
+        phone: u.profile?.phone || "",
+        country: u.profile?.country || "",
+        state: u.profile?.state || "",
+        city: u.profile?.city || ""
+      },
+      totalHours: u.totalHours || 0,
+      thisYearHours: u.thisYearHours || 0,
+      tier: u.tier || "None",
+      badges: u.badges || [],
+      createdAt: u.createdAt
+    }));
+
+    loggerFunction("info", `${route} - Returned ${formatted.length} users`);
+
+    return res.status(200).json({
+      message: "Users fetched successfully",
+      data: formatted
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
