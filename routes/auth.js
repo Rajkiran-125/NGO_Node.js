@@ -249,9 +249,26 @@ router.post(
       const { email, password } = req.body;
 
       const user = await User.findOne({ email });
-      if (!user || !(await user.comparePassword(password))) {
-        loggerFunction("warn", `${route} - Invalid login attempt for email=${email}`);
-        return res.status(401).json({ message: "Invalid credentials" });
+      // if (!user || !(await user.comparePassword(password))) {
+      //   loggerFunction("warn", `${route} - Invalid login attempt for email=${email}`);
+      //   return res.status(401).json({ message: "Invalid credentials" });
+      // }
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // ❗ If user created with Google, block normal login
+      if (user.googleId && !user.password) {
+        return res.status(400).json({
+          message: "This account was created using Google. Please sign in with Google."
+        });
+      }
+
+      // Normal login
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        loggerFunction("warn", `${route} - Invalid password attempt for email=${email}`);
+        return res.status(400).json({ message: "Invalid password" });
       }
 
       // // 🔥 Only allow volunteers
@@ -286,61 +303,78 @@ router.post(
   }
 );
 
-// // Login
-// router.post(
-//   "/admin/login",
-//   // [body("email").isEmail(), body("password").notEmpty()],
-//   async (req, res) => {
-//     const route = "POST /login";
-//     try {
-//       loggerFunction("info", `${route} - API execution started.`);
-//       loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
-//       // console.log("Inside Auth Login");
-//       const errors = validationResult(req);
-//       if (!errors.isEmpty()) {
-//         loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
-//         return res.status(400).json({ errors: errors.array() });
-//       }
+// Login
+router.post(
+  "/admin/login",
+  // [body("email").isEmail(), body("password").notEmpty()],
+  async (req, res) => {
+    const route = "POST /login";
+    try {
+      loggerFunction("info", `${route} - API execution started.`);
+      loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
+      // console.log("Inside Auth Login");
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
+        return res.status(400).json({ errors: errors.array() });
+      }
 
-//       const { email, password } = req.body;
+      const { email, password } = req.body;
 
-//       const user = await User.findOne({ email });
-//       if (!user || !(await user.comparePassword(password))) {
-//         loggerFunction("warn", `${route} - Invalid login attempt for email=${email}`);
-//         return res.status(401).json({ message: "Invalid credentials" });
-//       }
+      const user = await User.findOne({ email });
+      // if (!user || !(await user.comparePassword(password))) {
+      //   loggerFunction("warn", `${route} - Invalid login attempt for email=${email}`);
+      //   return res.status(401).json({ message: "Invalid credentials" });
+      // }
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
-//       // 🔥 Only allow admins
-//       if (user.role !== "admin") {
-//         return res.status(403).json({ message: "Not allowed — Admins only" });
-//       }
+      // ❗ If user created with Google, block normal login
+      if (user.googleId && !user.password) {
+        return res.status(400).json({
+          message: "This account was created using Google. Please sign in with Google."
+        });
+      }
 
-//       const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "fallback_secret", {
-//         expiresIn: "1d"
-//       });
+      // Normal login
+      const isMatch = await user.comparePassword(password);
+      if (!isMatch) {
+        loggerFunction("warn", `${route} - Invalid password attempt for email=${email}`);
+        return res.status(400).json({ message: "Invalid password" });
+      }
 
-//       loggerFunction("info", `${route} - Response sent successfully.`);
-//       loggerFunction("debug", `${route} - Login successful for email=${email}`);
-//       res.json({
-//         message: "Admin login successful",
-//         token,
-//         user: {
-//           id: user._id,
-//           email: user.email,
-//           role: user.role,
-//           profile: user.profile,
-//           totalHours: user.totalHours,
-//           thisYearHours: user.thisYearHours,
-//           tier: user.tier,
-//           badges: user.badges
-//         }
-//       });
-//     } catch (error) {
-//       loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-//       res.status(500).json({ message: "Server error", error: error.message });
-//     }
-//   }
-// );
+      // 🔥 Only allow admins
+      if (user.role !== "admin") {
+        return res.status(403).json({ message: "Not allowed — Admins only" });
+      }
+
+      const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "fallback_secret", {
+        expiresIn: "1d"
+      });
+
+      loggerFunction("info", `${route} - Response sent successfully.`);
+      loggerFunction("debug", `${route} - Login successful for email=${email}`);
+      res.json({
+        message: "Admin login successful",
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          role: user.role,
+          profile: user.profile,
+          totalHours: user.totalHours,
+          thisYearHours: user.thisYearHours,
+          tier: user.tier,
+          badges: user.badges
+        }
+      });
+    } catch (error) {
+      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  }
+);
 
 // // Forget Password
 // router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
@@ -590,20 +624,26 @@ router.post("/reset-password", async (req, res) => {
 // Google OAuth config
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = "http://localhost:5000/api/auth/google/callback";
+const REDIRECT_URI = "https://vmsbackend-eudv.onrender.com/api/auth/google/callback";
 
 // 1️⃣ Generate Google login URL
 router.get("/google", (req, res) => {
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=openid%20email%20profile`;
+  const url = `https://accounts.google.com/o/oauth2/v2/auth
+    ?client_id=${GOOGLE_CLIENT_ID}
+    &redirect_uri=${REDIRECT_URI}
+    &response_type=code
+    &scope=openid%20email%20profile
+    &prompt=select_account`.replace(/\s+/g, ""); // remove spaces
+
   res.redirect(url);
 });
 
-// 2️⃣ Handle Google callback (Google sends ?code=***)
+// 2️⃣ Google callback → exchange code → get user → save → return JWT
 router.get("/google/callback", async (req, res) => {
   try {
     const { code } = req.query;
 
-    // EXCHANGE code --> tokens
+    // EXCHANGE code → tokens
     const tokenResponse = await axios.post("https://oauth2.googleapis.com/token", {
       code,
       client_id: GOOGLE_CLIENT_ID,
@@ -612,31 +652,38 @@ router.get("/google/callback", async (req, res) => {
       grant_type: "authorization_code"
     });
 
-    const { id_token, access_token } = tokenResponse.data;
+    const { id_token } = tokenResponse.data;
 
-    // DECODE id_token to get user info
+    // Decode Google user
     const googleUser = JSON.parse(Buffer.from(id_token.split(".")[1], "base64").toString());
 
     const email = googleUser.email;
     const name = googleUser.name;
     const picture = googleUser.picture;
 
-    // TODO: 🔥 Find or create user in your DB
-    // const user = await User.findOneOrCreate({ email, name });
+    // 3️⃣ Find or create user in database
+    let user = await User.findOne({ email });
 
-    // Generate your application's JWT
-    const appToken = jwt.sign(
-      { email, name },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" } // Valid for 1 day
-    );
+    if (!user) {
+      user = await User.create({
+        email,
+        password: null, // password not needed for Google login
+        profile: {
+          fullName: name,
+          avatar: picture
+        },
+        authProvider: "google"
+      });
+    }
 
-    // Redirect to frontend with JWT
+    // 4️⃣ Generate your application's JWT
+    const appToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    // 5️⃣ Redirect to frontend with JWT
     res.redirect(`http://localhost:3000/login-success?token=${appToken}`);
   } catch (error) {
     console.error("Google OAuth Error:", error.response?.data || error);
     res.status(500).send("Authentication failed");
   }
 });
-
 module.exports = router;
