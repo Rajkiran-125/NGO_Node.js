@@ -160,52 +160,94 @@ router.get("/history", auth, async (req, res) => {
   }
 });
 
-// Update volunteer hours (before approval)
-router.put("/:id", auth, upload.single("proofOfService"), async (req, res) => {
-  const route = "PUT /:id";
-  try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-    loggerFunction(
-      "debug",
-      `${route} - userId= ${req.user?._id}, Params: ${JSON.stringify(
-        req.params
-      )}, Incoming request body=${JSON.stringify(req.body)}`
-    );
-    const hoursEntry = await VolunteerHours.findOne({
-      _id: req.params.id,
-      volunteerId: req.user._id,
-      status: "pending"
-    });
+// Update volunteer hours (full update)
+router.post(
+  "/update",
+  auth,
+  upload.single("proofOfService"),
+  [
+    body("id").notEmpty().withMessage("Entry ID required"),
+    body("fullName").notEmpty(),
+    body("activityName").notEmpty(),
+    body("serviceDate").isISO8601(),
+    body("serviceType").isIn([
+      "NEST4US Service Projects",
+      "NEST4US Community Events",
+      "NEST4US Food Rescues",
+      "NEST4US Tutors",
+      "NEST4US Notes of Kindness",
+      "NEST4US Workshops",
+      "NEST4US Donations",
+      "Others"
+    ]),
+    body("hours").isFloat({ min: 0.1 }),
+    body("description").notEmpty()
+  ],
+  async (req, res) => {
+    const route = "POST /update";
+    try {
+      loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+      loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
 
-    if (!hoursEntry) {
-      loggerFunction("warn", `${route} - Hours entry not found or already processed for ID ${req.params.id}`);
-      return res.status(404).json({ message: "Hours entry not found or already processed" });
+      // Validation error handling
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        loggerFunction(
+          "warn",
+          `${route} - Validation failed. userId=${req.user._id}, errors=${JSON.stringify(errors.array())}`
+        );
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const { id, fullName, activityName, serviceDate, serviceType, hours, description, isHistorical } = req.body;
+
+      // Check if entry exists & belongs to logged-in user
+      const hoursEntry = await VolunteerHours.findOne({
+        _id: id,
+        volunteerId: req.user._id,
+        status: "pending" // Only pending entries can be updated
+      });
+
+      if (!hoursEntry) {
+        loggerFunction("warn", `${route} - Entry not found or not editable: ${id}`);
+        return res.status(404).json({ message: "Entry not found or already approved/rejected" });
+      }
+
+      // Prepare updates
+      const updates = {
+        fullName,
+        activityName,
+        serviceDate: new Date(serviceDate),
+        serviceType,
+        hours: parseFloat(hours),
+        description,
+        isHistorical: isHistorical === "true"
+      };
+
+      // Handle optional file upload
+      if (req.file) {
+        updates.proofOfService = req.file.filename;
+      }
+
+      // Update the entry
+      const updatedEntry = await VolunteerHours.findByIdAndUpdate(id, updates, {
+        new: true,
+        runValidators: true
+      });
+
+      loggerFunction("info", `${route} - Update successful.`);
+      loggerFunction("debug", `${route} - Updated entry: ${JSON.stringify(updatedEntry)}`);
+
+      res.json({
+        message: "Volunteer hours updated successfully",
+        entry: updatedEntry
+      });
+    } catch (error) {
+      loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
-
-    const updates = req.body;
-    if (req.file) {
-      updates.proofOfService = req.file.filename;
-    }
-
-    const updatedEntry = await VolunteerHours.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true
-    });
-
-    loggerFunction("info", `${route} - Response sent successfully.`);
-    loggerFunction(
-      "debug",
-      `${route} - Hours entry updated successfully. userId=${req.user._id}, Data=${JSON.stringify(updatedEntry)}`
-    );
-    res.json({
-      message: "Hours entry updated successfully",
-      entry: updatedEntry
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
   }
-});
+);
 
 // Export volunteer hours
 router.get("/export", auth, async (req, res) => {
