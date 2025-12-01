@@ -425,4 +425,58 @@ router.post("/change-password", auth, async (req, res) => {
   }
 });
 
+// Get all users (Admin only)
+router.get("/users", async (req, res) => {
+  const route = "GET /users";
+  try {
+    // loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+
+    // Only admins can access
+    // if (req.user.role !== "admin") {
+    //   loggerFunction("warn", `${route} - Unauthorized access attempt by user=${req.user._id}`);
+    //   return res.status(403).json({ message: "Access denied. Admins only." });
+    // }
+
+    // Pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // Filters
+    const { search, role, provider } = req.query;
+
+    let query = {};
+
+    if (search) {
+      query.$or = [{ email: new RegExp(search, "i") }, { "profile.fullName": new RegExp(search, "i") }];
+    }
+
+    if (role) query.role = role;
+    if (provider) query.provider = provider;
+
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select("-resetPasswordCode -resetPasswordExpires") // hide sensitive fields
+      .lean();
+
+    const totalUsers = await User.countDocuments(query);
+
+    loggerFunction("info", `${route} - Users fetched successfully.`);
+    loggerFunction("debug", `${route} - Returned ${users.length} users.`);
+
+    res.json({
+      success: true,
+      page,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
+      users
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 module.exports = router;

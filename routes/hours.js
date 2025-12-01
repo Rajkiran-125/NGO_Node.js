@@ -249,6 +249,43 @@ router.post(
   }
 );
 
+// Get volunteer hours entry by ID (for Edit)
+router.post("/get-entry", auth, async (req, res) => {
+  const route = "POST /get-entry";
+  try {
+    loggerFunction("info", `${route} - API started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - Incoming request body: ${JSON.stringify(req.body)}`);
+
+    const { id } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: "Entry ID is required" });
+    }
+
+    // Find entry for the logged-in user
+    const entry = await VolunteerHours.findOne({
+      _id: id,
+      volunteerId: req.user._id
+    });
+
+    if (!entry) {
+      loggerFunction("warn", `${route} - Entry not found or unauthorized. ID: ${id}`);
+      return res.status(404).json({ message: "Entry not found" });
+    }
+
+    loggerFunction("info", `${route} - Entry fetched successfully.`);
+    loggerFunction("debug", `${route} - Entry Data: ${JSON.stringify(entry)}`);
+
+    res.json({
+      success: true,
+      entry
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 // Export volunteer hours
 router.get("/export", auth, async (req, res) => {
   const route = "GET /export";
