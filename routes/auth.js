@@ -618,4 +618,71 @@ router.post("/reset-password", async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+// Google OAuth config
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const REDIRECT_URI = "https://vmsbackend-eudv.onrender.com/api/auth/google/callback";
+
+// 1️⃣ Generate Google login URL
+router.get("/google", (req, res) => {
+  const url = `https://accounts.google.com/o/oauth2/v2/auth
+    ?client_id=${GOOGLE_CLIENT_ID}
+    &redirect_uri=${REDIRECT_URI}
+    &response_type=code
+    &scope=openid%20email%20profile
+    &prompt=select_account`.replace(/\s+/g, ""); // remove spaces
+
+  res.redirect(url);
+});
+
+// 2️⃣ Google callback → exchange code → get user → save → return JWT
+router.get("/google/callback", async (req, res) => {
+  try {
+    const { code } = req.query;
+
+    // EXCHANGE code → tokens
+    const tokenResponse = await axios.post("https://oauth2.googleapis.com/token", {
+      code,
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      redirect_uri: REDIRECT_URI,
+      grant_type: "authorization_code"
+    });
+
+    const { id_token } = tokenResponse.data;
+
+    // Decode Google user
+    const googleUser = JSON.parse(Buffer.from(id_token.split(".")[1], "base64").toString());
+
+    const email = googleUser.email;
+    const name = googleUser.name;
+    const picture = googleUser.picture;
+
+    // 3️⃣ Find or create user in database
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      user = await User.create({
+        email,
+        password: null, // password not needed for Google login
+        profile: {
+          fullName: name,
+          avatar: picture
+        },
+        authProvider: "google"
+      });
+    }
+
+    // 4️⃣ Generate your application's JWT
+    const appToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    // 5️⃣ Redirect to frontend with JWT
+    res.redirect(`http://localhost:3000/login-success?token=${appToken}`);
+  } catch (error) {
+    console.error("Google OAuth Error:", error.response?.data || error);
+    res.status(500).send("Authentication failed");
+  }
+});
+
 module.exports = router;
