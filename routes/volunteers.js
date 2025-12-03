@@ -153,6 +153,49 @@ router.get("/dashboard", auth, async (req, res) => {
   }
 });
 
+router.get("/newTier", auth, async (req, res) => {
+  const route = "GET /newTier";
+  try {
+    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      loggerFunction("warn", `${route} - User not found. userId=${userId}`);
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let newTierUnlocked = false;
+    let unlockedTier = null;
+
+    // Compare current tier with last acknowledged tier
+    if (user.tier !== user.lastAcknowledgedTier) {
+      newTierUnlocked = true;
+      unlockedTier = user.tier;
+      loggerFunction("info", `${route} - New tier unlocked! unlockedTier=${unlockedTier} userId=${userId}`);
+
+      // Update so next login does NOT send again
+      user.lastAcknowledgedTier = user.tier;
+      await user.save();
+    }
+
+    const responsePayload = {
+      message: "Login successful",
+      user,
+      newTierUnlocked,
+      unlockedTier
+    };
+
+    loggerFunction("info", `${route} - Sending response. userId=${userId}`);
+    loggerFunction("debug", `${route} - Response payload: ${JSON.stringify(responsePayload)}`);
+
+    res.status(200).json(responsePayload);
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 // Get profile details
 router.get("/profile", auth, async (req, res) => {
   const route = "GET /profile";
@@ -160,7 +203,10 @@ router.get("/profile", auth, async (req, res) => {
     const userId = req.user._id; // Extracted from token
 
     const user = await User.findById(userId).select("-password");
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      loggerFunction("warn", `${route} - User not found. userId=${userId}`);
+      return res.status(404).json({ message: "User not found" });
+    }
 
     res.status(200).json({
       message: "User profile fetched successfully",
@@ -172,38 +218,78 @@ router.get("/profile", auth, async (req, res) => {
 });
 
 // Update profile
-router.put("/profile", auth, upload.single("profilePicture"), async (req, res) => {
-  const route = "PUT /profile";
+router.post("/profile/update", auth, upload.single("profilePicture"), async (req, res) => {
+  const route = "POST /profile/update";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
-    const updates = req.body;
+    loggerFunction("info", `${route} - Started. userId=${req.user._id}`);
+    loggerFunction("debug", `${route} - Incoming Body: ${JSON.stringify(req.body)}`);
 
+    const { fullName, schoolOrganization, dateOfBirth, phoneNumber, location, causesOfInterest } = req.body;
+
+    let updateData = {};
+
+    // ----------------------------
+    // 1️⃣ Handle profile picture
+    // ----------------------------
     if (req.file) {
-      updates.profilePicture = req.file.filename;
+      const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
+      updateData["profile.profilePicture"] = filePath;
     }
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: { profile: { ...req.user.profile, ...updates } } },
-      { new: true, runValidators: true }
-    );
+    // ----------------------------
+    // 2️⃣ Normal profile fields
+    // ----------------------------
+    if (fullName !== undefined) updateData["profile.fullName"] = fullName;
 
-    loggerFunction("info", `${route} - Response sent successfully. userId=${req.user._id}`);
-    loggerFunction(
-      "debug",
-      `${route} - Profile updated successfully. userId=${req.user._id} Updated profile=${JSON.stringify(
-        user.profile,
-        null,
-        2
-      )}`
-    );
-    res.json({
+    if (schoolOrganization !== undefined) updateData["profile.schoolOrganization"] = schoolOrganization;
+
+    if (dateOfBirth !== undefined) updateData["profile.dateOfBirth"] = dateOfBirth;
+
+    if (phoneNumber !== undefined) updateData["profile.phoneNumber"] = phoneNumber;
+
+    // ----------------------------
+    // 3️⃣ Location (state / country)
+    // ----------------------------
+    if (location) {
+      const { state, country } = location;
+
+      if (state !== undefined) {
+        updateData["profile.location.state"] = state;
+      }
+      if (country !== undefined) {
+        updateData["profile.location.country"] = country;
+      }
+    }
+    // ----------------------------
+    // 4️⃣ Causes of interest (array)
+    // ----------------------------
+    if (causesOfInterest) {
+      try {
+        const parsed = typeof causesOfInterest === "string" ? JSON.parse(causesOfInterest) : causesOfInterest;
+
+        updateData["profile.causesOfInterest"] = parsed;
+      } catch (err) {
+        loggerFunction("warn", `${route} - Invalid causesOfInterest JSON`);
+      }
+    }
+
+    // ----------------------------
+    // 5️⃣ Update DB
+    // ----------------------------
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    loggerFunction("info", `${route} - Profile updated successfully`);
+
+    return res.status(200).json({
       message: "Profile updated successfully",
-      profile: user.profile
+      user: updatedUser
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction("error", `${route} - Error: ${error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -405,6 +491,7 @@ router.post("/change-password", auth, async (req, res) => {
 
     const user = await User.findById(userId);
     if (!user) {
+      loggerFunction("warn", `${route} - User not found. userId=${userId}`);
       return res.status(404).json({ message: "User not found" });
     }
 
@@ -425,7 +512,7 @@ router.post("/change-password", auth, async (req, res) => {
   }
 });
 
-// Get all users (Admin only)
+// Get all users (Testing only)
 router.get("/users", async (req, res) => {
   const route = "GET /users";
   try {

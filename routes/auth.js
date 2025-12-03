@@ -154,8 +154,8 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       dateOfBirth,
       phoneNumber,
       location,
-      causesOfInterest,
-      referredBy
+      causesOfInterest
+      // referredBy
     } = req.body;
 
     loggerFunction("debug", `${route} - Incoming data: email=${email}`);
@@ -186,12 +186,15 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
         schoolOrganization,
         dateOfBirth,
         phoneNumber,
-        location,
+        location: {
+          state: location?.state || null,
+          country: location?.country || null
+        },
         profilePicture: profilePicturePath,
         causesOfInterest: causesOfInterest ? JSON.parse(causesOfInterest) : []
-      },
-      referralCode,
-      referredBy
+      }
+      // referralCode,
+      // referredBy
     });
 
     // ✅ Handle referral tracking
@@ -565,7 +568,7 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
       `
     };
 
-    // await sgMail.send(msg);
+    await sgMail.send(msg);
 
     loggerFunction("info", `${route} - Reset code email sent to ${user.email}`);
 

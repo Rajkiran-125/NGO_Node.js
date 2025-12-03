@@ -4,10 +4,13 @@ const VolunteerHours = require("../models/VolunteerHours");
 const User = require("../models/User");
 const router = express.Router();
 const loggerFunction = require("../utils/loggerFunction");
+const sgMail = require("@sendgrid/mail");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Define tiers
 const TIERS = [
-  { name: "Kindness Ambassador", min: 0, max: 99, range: "50-99" },
+  { name: "Kindness Ambassador", min: 50, max: 99, range: "50-99" },
   { name: "Change Catalyst", min: 100, max: 149, range: "100-149" },
   { name: "Service Champion", min: 150, max: 249, range: "150-249" },
   { name: "Legacy Leader", min: 250, max: null, range: "250+" }
@@ -119,6 +122,220 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
+
+// router.put("/review-hours/:id", adminAuth, async (req, res) => {
+//   const route = "PUT /review-hours/:id";
+//   try {
+//     loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+//     loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
+
+//     const { status, rejectionReason } = req.body;
+
+//     if (!["approved", "rejected"].includes(status)) {
+//       loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
+//       return res.status(400).json({ message: "Invalid status" });
+//     }
+
+//     const hoursEntry = await VolunteerHours.findById(req.params.id);
+//     if (!hoursEntry) {
+//       loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
+//       return res.status(404).json({ message: "Hours entry not found" });
+//     }
+//     loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}`);
+
+//     // Update hours entry fields
+//     hoursEntry.status = status;
+//     hoursEntry.reviewedAt = new Date();
+//     hoursEntry.reviewedBy = req.user._id;
+
+//     if (status === "rejected") {
+//       hoursEntry.rejectionReason = rejectionReason || "";
+//       loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
+//     } else {
+//       // Clear rejection reason if approving
+//       hoursEntry.rejectionReason = undefined;
+//     }
+
+//     await hoursEntry.save();
+//     loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
+
+//     // Prepare to send email to volunteer
+//     const volunteer = await User.findById(hoursEntry.volunteerId);
+//     if (!volunteer) {
+//       loggerFunction("warn", `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`);
+//     }
+
+//     // If approved, update volunteer's total hours and check for tier upgrades
+//     let newTier = null;
+//     let previousTier = null;
+//     let badgeAdded = false;
+//     if (status === "approved" && volunteer) {
+//       previousTier = volunteer.tier;
+
+//       // Ensure numeric updates (avoid double-add if entry was already approved before)
+//       // We assume entry was pending before this review; if you allow re-approvals you must guard here.
+//       volunteer.totalHours = (volunteer.totalHours || 0) + (hoursEntry.hours || 0);
+
+//       // Update this year's hours
+//       const currentYear = new Date().getFullYear();
+//       const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
+//       if (serviceYear === currentYear) {
+//         volunteer.thisYearHours = (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
+//       }
+
+//       // Determine tier based on totalHours
+//       if (volunteer.totalHours >= 250) newTier = "Legacy Leader";
+//       else if (volunteer.totalHours >= 150) newTier = "Service Champion";
+//       else if (volunteer.totalHours >= 100) newTier = "Change Catalyst";
+//       else if (volunteer.totalHours >= 50) newTier = "Kindness Ambassador";
+//       else newTier = "None";
+
+//       // If tier changed (upgraded) record achievement and add badge
+//       if (newTier !== previousTier) {
+//         volunteer.tier = newTier;
+//         // store last achieved tier and timestamp
+//         volunteer.lastAchievedTier = newTier;
+//         volunteer.lastTierUpdatedAt = new Date();
+
+//         // Add badge if not present and tier is not 'None'
+//         if (newTier && newTier !== "None" && !volunteer.badges.includes(newTier)) {
+//           volunteer.badges.push(newTier);
+//           badgeAdded = true;
+//         }
+//       }
+
+//       await volunteer.save();
+//       loggerFunction(
+//         "info",
+//         `${route} - Volunteer updated. volunteerId=${hoursEntry.volunteerId} totalHoursAfter=${volunteer.totalHours} tierBefore=${previousTier} tierAfter=${newTier} badgeAdded=${badgeAdded}`
+//       );
+//     }
+
+//     // --------------- Prepare email(s) ---------------
+//     if (volunteer && volunteer.email) {
+//       // helper for formatting
+//       const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+
+//       const entryInfoHtml = `
+//     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
+//     <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
+//     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
+//     <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
+//     <hr />
+//   `;
+
+//       // ----------------------------------------------------
+//       // 1️⃣ SEND APPROVAL EMAIL
+//       // ----------------------------------------------------
+//       if (status === "approved") {
+//         const approvalHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
+//       ${entryInfoHtml}
+//       <p>Thank you for contributing your time and effort!</p>
+//       <p>NEST4US Team</p>
+//     `;
+
+//         const msg1 = {
+//           to: volunteer.email,
+//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//           subject: "Your Volunteer Hours Have Been Approved",
+//           html: approvalHtml
+//         };
+
+//         try {
+//           loggerFunction("debug", `${route} - Sending approval email to ${volunteer.email}`);
+//           await sgMail.send(msg1);
+//           loggerFunction("info", `${route} - Approval email sent`);
+//         } catch (err) {
+//           loggerFunction("error", `${route} - Approval email failed: ${err.message}`);
+//         }
+//       }
+
+//       // ----------------------------------------------------
+//       // 2️⃣ SEND REJECTION EMAIL
+//       // ----------------------------------------------------
+//       if (status === "rejected") {
+//         const rejectionHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
+//       ${entryInfoHtml}
+//       <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+//       <p>You may correct & re-submit your entry.</p>
+//       <p>NEST4US Team</p>
+//     `;
+
+//         const msg2 = {
+//           to: volunteer.email,
+//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//           subject: "Your Volunteer Hours Submission Was Rejected",
+//           html: rejectionHtml
+//         };
+
+//         try {
+//           loggerFunction("debug", `${route} - Sending rejection email`);
+//           await sgMail.send(msg2);
+//           loggerFunction("info", `${route} - Rejection email sent`);
+//         } catch (err) {
+//           loggerFunction("error", `${route} - Rejection email failed: ${err.message}`);
+//         }
+//       }
+
+//       // ----------------------------------------------------
+//       // 3️⃣ SEND TIER UPGRADE EMAIL (only if tier changed)
+//       // ----------------------------------------------------
+//       if (status === "approved" && newTier && newTier !== previousTier && newTier !== "None") {
+//         const tierHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p>🎉 <strong>Congratulations!</strong></p>
+//       <p>You have unlocked a new volunteer recognition tier:</p>
+//       <h2 style="color:#4CAF50">${newTier}</h2>
+//       <p>Thank you for your dedication and continued impact.</p>
+//       <p>Keep shining!</p>
+//       <br/>
+//       <p>NEST4US Team</p>
+//     `;
+
+//         const msg3 = {
+//           to: volunteer.email,
+//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//           subject: `🎉 Congratulations! You've Achieved the "${newTier}" Tier`,
+//           html: tierHtml
+//         };
+
+//         try {
+//           loggerFunction("debug", `${route} - Sending tier upgrade email`);
+//           await sgMail.send(msg3);
+//           loggerFunction("info", `${route} - Tier upgrade email sent`);
+//         } catch (err) {
+//           loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
+//         }
+//       }
+//     } else {
+//       loggerFunction(
+//         "warn",
+//         `${route} - Volunteer email missing, skipping notification. volunteerId=${hoursEntry.volunteerId}`
+//       );
+//     }
+
+//     // Final response
+//     loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
+//     loggerFunction(
+//       "debug",
+//       `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${
+//         hoursEntry.status
+//       }`
+//     );
+
+//     res.json({
+//       message: `Hours ${status} successfully`,
+//       entry: hoursEntry
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
 
 // Get all volunteers summary
 router.get("/volunteers", adminAuth, async (req, res) => {
@@ -583,45 +800,6 @@ router.post("/user-details", adminAuth, async (req, res) => {
       message: "Server error",
       error: error.message
     });
-  }
-});
-
-// GET /users – Get all users  ******FOR TESTING*********
-router.get("/users", async (req, res) => {
-  const route = "GET /users";
-  try {
-    const users = await User.find({})
-      .select("profile email totalHours thisYearHours tier badges createdAt")
-      .sort({ createdAt: -1 });
-
-    // Ensure fullName always present
-    const formatted = users.map(u => ({
-      userId: u._id,
-      email: u.email || "",
-      fullName: u.profile?.fullName || "", // <-- important
-      profile: {
-        fullName: u.profile?.fullName || "",
-        phone: u.profile?.phone || "",
-        country: u.profile?.country || "",
-        state: u.profile?.state || "",
-        city: u.profile?.city || ""
-      },
-      totalHours: u.totalHours || 0,
-      thisYearHours: u.thisYearHours || 0,
-      tier: u.tier || "None",
-      badges: u.badges || [],
-      createdAt: u.createdAt
-    }));
-
-    loggerFunction("info", `${route} - Returned ${formatted.length} users`);
-
-    return res.status(200).json({
-      message: "Users fetched successfully",
-      data: formatted
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
-    return res.status(500).json({ message: "Server error", error: error.message });
   }
 });
 
