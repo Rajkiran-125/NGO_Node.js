@@ -4,6 +4,7 @@ const VolunteerHours = require("../models/VolunteerHours");
 const User = require("../models/User");
 const router = express.Router();
 const loggerFunction = require("../utils/loggerFunction");
+const tierMessages = require("../config/tierMessages.json");
 const sgMail = require("@sendgrid/mail");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -285,30 +286,33 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //       // 3️⃣ SEND TIER UPGRADE EMAIL (only if tier changed)
 //       // ----------------------------------------------------
 //       if (status === "approved" && newTier && newTier !== previousTier && newTier !== "None") {
-//         const tierHtml = `
+//         const tierInfo = tierMessages[newTier];
+
+//         if (!tierInfo) {
+//           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
+//         } else {
+//           const tierHtml = `
 //       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
-//       <p>🎉 <strong>Congratulations!</strong></p>
-//       <p>You have unlocked a new volunteer recognition tier:</p>
-//       <h2 style="color:#4CAF50">${newTier}</h2>
-//       <p>Thank you for your dedication and continued impact.</p>
-//       <p>Keep shining!</p>
+//       <p><strong>🎉 Congratulations!</strong></p>
+//       <p>${tierInfo.message}</p>
 //       <br/>
 //       <p>NEST4US Team</p>
 //     `;
 
-//         const msg3 = {
-//           to: volunteer.email,
-//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
-//           subject: `🎉 Congratulations! You've Achieved the "${newTier}" Tier`,
-//           html: tierHtml
-//         };
+//           const msg3 = {
+//             to: volunteer.email,
+//             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//             subject: tierInfo.subject,
+//             html: tierHtml
+//           };
 
-//         try {
-//           loggerFunction("debug", `${route} - Sending tier upgrade email`);
-//           await sgMail.send(msg3);
-//           loggerFunction("info", `${route} - Tier upgrade email sent`);
-//         } catch (err) {
-//           loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
+//           try {
+//             loggerFunction("debug", `${route} - Sending tier upgrade email for tier=${newTier}`);
+//             await sgMail.send(msg3);
+//             loggerFunction("info", `${route} - Tier upgrade email sent`);
+//           } catch (err) {
+//             loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
+//           }
 //         }
 //       }
 //     } else {
