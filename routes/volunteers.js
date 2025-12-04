@@ -228,13 +228,39 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
 
     let updateData = {};
 
+    if (!req.file) {
+      return res.status(400).json({ message: "Profile picture is required" });
+    }
+
+    const requiredFields = {
+      email,
+      password,
+      fullName,
+      // firstName,
+      // lastName,
+      schoolOrganization,
+      dateOfBirth,
+      phoneNumber,
+      location
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value || value === "") {
+        return res.status(400).json({ message: `${key} is required` });
+      }
+    }
+
+    if (!location.state || !location.country) {
+      return res.status(400).json({ message: "Location (state and country) is required" });
+    }
+
     // ----------------------------
     // 1️⃣ Handle profile picture
     // ----------------------------
-    if (req.file) {
-      const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
-      updateData["profile.profilePicture"] = filePath;
-    }
+    // if (req.file) {
+    const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
+    updateData["profile.profilePicture"] = filePath;
+    // }
 
     // ----------------------------
     // 2️⃣ Normal profile fields

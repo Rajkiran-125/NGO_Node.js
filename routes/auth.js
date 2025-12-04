@@ -14,9 +14,9 @@ const sgMail = require("@sendgrid/mail");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Generate unique referral code
-const generateReferralCode = () => {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-};
+// const generateReferralCode = () => {
+//   return Math.random().toString(36).substring(2, 8).toUpperCase();
+// };
 
 // Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "../uploads/userProfilePictures");
@@ -160,20 +160,46 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
 
     loggerFunction("debug", `${route} - Incoming data: email=${email}`);
 
+    if (!req.file) {
+      return res.status(400).json({ message: "Profile picture is required" });
+    }
+
+    const requiredFields = {
+      email,
+      password,
+      fullName,
+      // firstName,
+      // lastName,
+      schoolOrganization,
+      dateOfBirth,
+      phoneNumber,
+      location
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      if (!value || value === "") {
+        return res.status(400).json({ message: `${key} is required` });
+      }
+    }
+
+    if (!location.state || !location.country) {
+      return res.status(400).json({ message: "Location (state and country) is required" });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       loggerFunction("warn", `${route} - User already exists: ${email}`);
       return res.status(400).json({ message: "User already exists" });
     }
 
-    const referralCode = generateReferralCode();
+    // const referralCode = generateReferralCode();
 
     // ✅ Handle uploaded image
     let profilePicturePath = null;
-    if (req.file) {
-      profilePicturePath = `/uploads/userProfilePictures/${req.file.filename}`;
-      loggerFunction("info", `${route} - Image uploaded at ${profilePicturePath}`);
-    }
+    // if (req.file) {
+    profilePicturePath = `/uploads/userProfilePictures/${req.file.filename}`;
+    loggerFunction("info", `${route} - Image uploaded at ${profilePicturePath}`);
+    // }
 
     // ✅ Create new user
     const user = new User({
