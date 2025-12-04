@@ -25,9 +25,9 @@ mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_v
   useUnifiedTopology: true
 });
 
-// app.get('/', (req, res) => {
-//     res.send('<h1 style = "text-align: center;background: dodgerblue;"><marquee behavior="scroll" direction="left">oppopopopo<sup>®</sup> - v1.0.0.01</marquee></h1>');
-// });
+app.get("/liveness", (req, res) => {
+  res.json({ message: "Running..." });
+});
 
 // Routes
 app.use("/api/auth", authRoutes);
