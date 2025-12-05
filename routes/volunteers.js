@@ -47,6 +47,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif/;
     const ext = allowed.test(path.extname(file.originalname).toLowerCase());
@@ -242,8 +243,6 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     }
 
     const requiredFields = {
-      email,
-      password,
       fullName,
       // firstName,
       // lastName,
