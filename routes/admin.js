@@ -38,100 +38,13 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
 });
 
 // Approve or reject hours
-router.put("/review-hours/:id", adminAuth, async (req, res) => {
-  const route = "PUT /review-hours/:id";
-  try {
-    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
-    loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
-    const { status, rejectionReason } = req.body;
-    loggerFunction("debug", `PUT /review-hours, Request : {req.params.id} - {req.body}`);
-    if (!["approved", "rejected"].includes(status)) {
-      loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
-      return res.status(400).json({ message: "Invalid status" });
-    }
-
-    const hoursEntry = await VolunteerHours.findById(req.params.id);
-    if (!hoursEntry) {
-      loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
-      return res.status(404).json({ message: "Hours entry not found" });
-    }
-    loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}}`);
-    // Update hours entry
-    hoursEntry.status = status;
-    hoursEntry.reviewedAt = new Date();
-    hoursEntry.reviewedBy = req.user._id;
-
-    if (status === "rejected" && rejectionReason) {
-      hoursEntry.rejectionReason = rejectionReason;
-      loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
-    }
-
-    await hoursEntry.save();
-    loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
-
-    // If approved, update volunteer's total hours and check for tier upgrades
-    if (status === "approved") {
-      const volunteer = await User.findById(hoursEntry.volunteerId);
-      volunteer.totalHours += hoursEntry.hours;
-
-      // Update this year's hours
-      const currentYear = new Date().getFullYear();
-      const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
-      if (serviceYear === currentYear) {
-        volunteer.thisYearHours += hoursEntry.hours;
-      }
-
-      // Check tier upgrades
-      const previousTier = volunteer.tier;
-      let newTier = "None";
-      if (volunteer.totalHours >= 250) newTier = "Legacy Leader";
-      else if (volunteer.totalHours >= 150) newTier = "Service Champion";
-      else if (volunteer.totalHours >= 100) newTier = "Change Catalyst";
-      else if (volunteer.totalHours >= 50) newTier = "Kindness Ambassador";
-
-      volunteer.tier = newTier;
-
-      // Add achievement badge if tier upgraded
-      let badgeAdded = false;
-      if (newTier !== previousTier && newTier !== "None") {
-        if (!volunteer.badges.includes(newTier)) {
-          volunteer.badges.push(newTier);
-          badgeAdded = true;
-        }
-      }
-
-      await volunteer.save();
-      loggerFunction(
-        "info",
-        `${route} - Volunteer updated. volunteerId=${hoursEntry.volunteerId} totalHoursAfter=${volunteer.totalHours} tierBefore=${previousTier} tierAfter=${newTier} badgeAdded=${badgeAdded}`
-      );
-    }
-    loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
-    loggerFunction(
-      "debug",
-      `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${
-        hoursEntry.status
-      }`
-    );
-
-    res.json({
-      message: `Hours ${status} successfully`,
-      entry: hoursEntry
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
 // router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //   const route = "PUT /review-hours/:id";
 //   try {
 //     loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
 //     loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
-
 //     const { status, rejectionReason } = req.body;
-
+//     loggerFunction("debug", `PUT /review-hours, Request : {req.params.id} - {req.body}`);
 //     if (!["approved", "rejected"].includes(status)) {
 //       loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
 //       return res.status(400).json({ message: "Invalid status" });
@@ -142,64 +55,46 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //       loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
 //       return res.status(404).json({ message: "Hours entry not found" });
 //     }
-//     loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}`);
-
-//     // Update hours entry fields
+//     loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}}`);
+//     // Update hours entry
 //     hoursEntry.status = status;
 //     hoursEntry.reviewedAt = new Date();
 //     hoursEntry.reviewedBy = req.user._id;
 
-//     if (status === "rejected") {
-//       hoursEntry.rejectionReason = rejectionReason || "";
+//     if (status === "rejected" && rejectionReason) {
+//       hoursEntry.rejectionReason = rejectionReason;
 //       loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
-//     } else {
-//       // Clear rejection reason if approving
-//       hoursEntry.rejectionReason = undefined;
 //     }
 
 //     await hoursEntry.save();
 //     loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
 
-//     // Prepare to send email to volunteer
-//     const volunteer = await User.findById(hoursEntry.volunteerId);
-//     if (!volunteer) {
-//       loggerFunction("warn", `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`);
-//     }
-
 //     // If approved, update volunteer's total hours and check for tier upgrades
-//     let newTier = null;
-//     let previousTier = null;
-//     let badgeAdded = false;
-//     if (status === "approved" && volunteer) {
-//       previousTier = volunteer.tier;
-
-//       // Ensure numeric updates (avoid double-add if entry was already approved before)
-//       // We assume entry was pending before this review; if you allow re-approvals you must guard here.
-//       volunteer.totalHours = (volunteer.totalHours || 0) + (hoursEntry.hours || 0);
+//     if (status === "approved") {
+//       const volunteer = await User.findById(hoursEntry.volunteerId);
+//       volunteer.totalHours += hoursEntry.hours;
 
 //       // Update this year's hours
 //       const currentYear = new Date().getFullYear();
 //       const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
 //       if (serviceYear === currentYear) {
-//         volunteer.thisYearHours = (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
+//         volunteer.thisYearHours += hoursEntry.hours;
 //       }
 
-//       // Determine tier based on totalHours
+//       // Check tier upgrades
+//       const previousTier = volunteer.tier;
+//       let newTier = "None";
 //       if (volunteer.totalHours >= 250) newTier = "Legacy Leader";
 //       else if (volunteer.totalHours >= 150) newTier = "Service Champion";
 //       else if (volunteer.totalHours >= 100) newTier = "Change Catalyst";
 //       else if (volunteer.totalHours >= 50) newTier = "Kindness Ambassador";
-//       else newTier = "None";
 
-//       // If tier changed (upgraded) record achievement and add badge
-//       if (newTier !== previousTier) {
-//         volunteer.tier = newTier;
-//         // store last achieved tier and timestamp
-//         volunteer.lastAchievedTier = newTier;
-//         volunteer.lastTierUpdatedAt = new Date();
+//       volunteer.tier = newTier;
 
-//         // Add badge if not present and tier is not 'None'
-//         if (newTier && newTier !== "None" && !volunteer.badges.includes(newTier)) {
+//       // Add achievement badge if tier upgraded
+//       let badgeAdded = false;
+//       if (newTier !== previousTier && newTier !== "None") {
+//         if (!volunteer.badges.includes(newTier)) {
 //           volunteer.badges.push(newTier);
 //           badgeAdded = true;
 //         }
@@ -211,118 +106,6 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //         `${route} - Volunteer updated. volunteerId=${hoursEntry.volunteerId} totalHoursAfter=${volunteer.totalHours} tierBefore=${previousTier} tierAfter=${newTier} badgeAdded=${badgeAdded}`
 //       );
 //     }
-
-//     // --------------- Prepare email(s) ---------------
-//     if (volunteer && volunteer.email) {
-//       // helper for formatting
-//       const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
-
-//       const entryInfoHtml = `
-//     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
-//     <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
-//     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
-//     <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
-//     <hr />
-//   `;
-
-//       // ----------------------------------------------------
-//       // 1️⃣ SEND APPROVAL EMAIL
-//       // ----------------------------------------------------
-//       if (status === "approved") {
-//         const approvalHtml = `
-//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
-//       <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
-//       ${entryInfoHtml}
-//       <p>Thank you for contributing your time and effort!</p>
-//       <p>NEST4US Team</p>
-//     `;
-
-//         const msg1 = {
-//           to: volunteer.email,
-//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
-//           subject: "Your Volunteer Hours Have Been Approved",
-//           html: approvalHtml
-//         };
-
-//         try {
-//           loggerFunction("debug", `${route} - Sending approval email to ${volunteer.email}`);
-//           await sgMail.send(msg1);
-//           loggerFunction("info", `${route} - Approval email sent`);
-//         } catch (err) {
-//           loggerFunction("error", `${route} - Approval email failed: ${err.message}`);
-//         }
-//       }
-
-//       // ----------------------------------------------------
-//       // 2️⃣ SEND REJECTION EMAIL
-//       // ----------------------------------------------------
-//       if (status === "rejected") {
-//         const rejectionHtml = `
-//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
-//       <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
-//       ${entryInfoHtml}
-//       <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
-//       <p>You may correct & re-submit your entry.</p>
-//       <p>NEST4US Team</p>
-//     `;
-
-//         const msg2 = {
-//           to: volunteer.email,
-//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
-//           subject: "Your Volunteer Hours Submission Was Rejected",
-//           html: rejectionHtml
-//         };
-
-//         try {
-//           loggerFunction("debug", `${route} - Sending rejection email`);
-//           await sgMail.send(msg2);
-//           loggerFunction("info", `${route} - Rejection email sent`);
-//         } catch (err) {
-//           loggerFunction("error", `${route} - Rejection email failed: ${err.message}`);
-//         }
-//       }
-
-//       // ----------------------------------------------------
-//       // 3️⃣ SEND TIER UPGRADE EMAIL (only if tier changed)
-//       // ----------------------------------------------------
-//       if (status === "approved" && newTier && newTier !== previousTier && newTier !== "None") {
-//         const tierInfo = tierMessages[newTier];
-
-//         if (!tierInfo) {
-//           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
-//         } else {
-//           const tierHtml = `
-//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
-//       <p><strong>🎉 Congratulations!</strong></p>
-//       <p>${tierInfo.message}</p>
-//       <br/>
-//       <p>NEST4US Team</p>
-//     `;
-
-//           const msg3 = {
-//             to: volunteer.email,
-//             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
-//             subject: tierInfo.subject,
-//             html: tierHtml
-//           };
-
-//           try {
-//             loggerFunction("debug", `${route} - Sending tier upgrade email for tier=${newTier}`);
-//             await sgMail.send(msg3);
-//             loggerFunction("info", `${route} - Tier upgrade email sent`);
-//           } catch (err) {
-//             loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
-//           }
-//         }
-//       }
-//     } else {
-//       loggerFunction(
-//         "warn",
-//         `${route} - Volunteer email missing, skipping notification. volunteerId=${hoursEntry.volunteerId}`
-//       );
-//     }
-
-//     // Final response
 //     loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
 //     loggerFunction(
 //       "debug",
@@ -340,6 +123,222 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //     res.status(500).json({ message: "Server error", error: error.message });
 //   }
 // });
+
+router.put("/review-hours/:id", adminAuth, async (req, res) => {
+  const route = "PUT /review-hours/:id";
+  try {
+    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+    loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
+
+    const { status, rejectionReason } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
+      return res.status(400).json({ message: "Invalid status" });
+    }
+
+    const hoursEntry = await VolunteerHours.findById(req.params.id);
+    if (!hoursEntry) {
+      loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
+      return res.status(404).json({ message: "Hours entry not found" });
+    }
+    loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}`);
+
+    // Update hours entry fields
+    hoursEntry.status = status;
+    hoursEntry.reviewedAt = new Date();
+    hoursEntry.reviewedBy = req.user._id;
+
+    if (status === "rejected") {
+      hoursEntry.rejectionReason = rejectionReason || "";
+      loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
+    } else {
+      // Clear rejection reason if approving
+      hoursEntry.rejectionReason = undefined;
+    }
+
+    await hoursEntry.save();
+    loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
+
+    // Prepare to send email to volunteer
+    const volunteer = await User.findById(hoursEntry.volunteerId);
+    if (!volunteer) {
+      loggerFunction("warn", `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`);
+    }
+
+    // If approved, update volunteer's total hours and check for tier upgrades
+    let newTier = null;
+    let previousTier = null;
+    let badgeAdded = false;
+    if (status === "approved" && volunteer) {
+      previousTier = volunteer.tier;
+
+      // Ensure numeric updates (avoid double-add if entry was already approved before)
+      // We assume entry was pending before this review; if you allow re-approvals you must guard here.
+      volunteer.totalHours = (volunteer.totalHours || 0) + (hoursEntry.hours || 0);
+
+      // Update this year's hours
+      const currentYear = new Date().getFullYear();
+      const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
+      if (serviceYear === currentYear) {
+        volunteer.thisYearHours = (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
+      }
+
+      // Determine tier based on totalHours
+      if (volunteer.totalHours >= 250) newTier = "Legacy Leader";
+      else if (volunteer.totalHours >= 150) newTier = "Service Champion";
+      else if (volunteer.totalHours >= 100) newTier = "Change Catalyst";
+      else if (volunteer.totalHours >= 50) newTier = "Kindness Ambassador";
+      else newTier = "None";
+
+      // If tier changed (upgraded) record achievement and add badge
+      if (newTier !== previousTier) {
+        volunteer.tier = newTier;
+        // store last achieved tier and timestamp
+        volunteer.lastAchievedTier = newTier;
+        volunteer.lastTierUpdatedAt = new Date();
+
+        // Add badge if not present and tier is not 'None'
+        if (newTier && newTier !== "None" && !volunteer.badges.includes(newTier)) {
+          volunteer.badges.push(newTier);
+          badgeAdded = true;
+        }
+      }
+
+      await volunteer.save();
+      loggerFunction(
+        "info",
+        `${route} - Volunteer updated. volunteerId=${hoursEntry.volunteerId} totalHoursAfter=${volunteer.totalHours} tierBefore=${previousTier} tierAfter=${newTier} badgeAdded=${badgeAdded}`
+      );
+    }
+
+    // --------------- Prepare email(s) ---------------
+    if (volunteer && volunteer.email) {
+      // helper for formatting
+      const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+
+      const entryInfoHtml = `
+    <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
+    <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
+    <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
+    <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
+    <hr />
+  `;
+
+      // ----------------------------------------------------
+      // 1️⃣ SEND APPROVAL EMAIL
+      // ----------------------------------------------------
+      if (status === "approved") {
+        const approvalHtml = `
+      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
+      ${entryInfoHtml}
+      <p>Thank you for contributing your time and effort!</p>
+      <p>NEST4US Team</p>
+    `;
+
+        const msg1 = {
+          to: volunteer.email,
+          from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+          subject: "Your Volunteer Hours Have Been Approved",
+          html: approvalHtml
+        };
+
+        try {
+          loggerFunction("debug", `${route} - Sending approval email to ${volunteer.email}`);
+          await sgMail.send(msg1);
+          loggerFunction("info", `${route} - Approval email sent`);
+        } catch (err) {
+          loggerFunction("error", `${route} - Approval email failed: ${err.message}`);
+        }
+      }
+
+      // ----------------------------------------------------
+      // 2️⃣ SEND REJECTION EMAIL
+      // ----------------------------------------------------
+      if (status === "rejected") {
+        const rejectionHtml = `
+      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
+      ${entryInfoHtml}
+      <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+      <p>You may correct & re-submit your entry.</p>
+      <p>NEST4US Team</p>
+    `;
+
+        const msg2 = {
+          to: volunteer.email,
+          from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+          subject: "Your Volunteer Hours Submission Was Rejected",
+          html: rejectionHtml
+        };
+
+        try {
+          loggerFunction("debug", `${route} - Sending rejection email`);
+          await sgMail.send(msg2);
+          loggerFunction("info", `${route} - Rejection email sent`);
+        } catch (err) {
+          loggerFunction("error", `${route} - Rejection email failed: ${err.message}`);
+        }
+      }
+
+      // ----------------------------------------------------
+      // 3️⃣ SEND TIER UPGRADE EMAIL (only if tier changed)
+      // ----------------------------------------------------
+      if (status === "approved" && newTier && newTier !== previousTier && newTier !== "None") {
+        const tierInfo = tierMessages[newTier];
+
+        if (!tierInfo) {
+          loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
+        } else {
+          const tierHtml = `
+      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p><strong>🎉 Congratulations!</strong></p>
+      <p>${tierInfo.message}</p>
+      <br/>
+      <p>NEST4US Team</p>
+    `;
+
+          const msg3 = {
+            to: volunteer.email,
+            from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+            subject: tierInfo.subject,
+            html: tierHtml
+          };
+
+          try {
+            loggerFunction("debug", `${route} - Sending tier upgrade email for tier=${newTier}`);
+            await sgMail.send(msg3);
+            loggerFunction("info", `${route} - Tier upgrade email sent`);
+          } catch (err) {
+            loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
+          }
+        }
+      }
+    } else {
+      loggerFunction(
+        "warn",
+        `${route} - Volunteer email missing, skipping notification. volunteerId=${hoursEntry.volunteerId}`
+      );
+    }
+
+    // Final response
+    loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
+    loggerFunction(
+      "debug",
+      `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${hoursEntry.status
+      }`
+    );
+
+    res.json({
+      message: `Hours ${status} successfully`,
+      entry: hoursEntry
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 // Get all volunteers summary
 router.get("/volunteers", adminAuth, async (req, res) => {

@@ -7,6 +7,7 @@ const VolunteerHours = require("../models/VolunteerHours");
 const router = express.Router();
 const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
+const tierMessages = require("../config/tierMessages.json");
 
 // // Configure multer for file uploads
 // const storage = multer.diskStorage({

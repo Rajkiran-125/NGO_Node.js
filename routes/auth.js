@@ -219,7 +219,8 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
           country: country
         },
         profilePicture: profilePicturePath,
-        causesOfInterest: causesOfInterest ? JSON.parse(causesOfInterest) : []
+        // causesOfInterest: causesOfInterest ? JSON.parse(causesOfInterest) : []
+        causesOfInterest: causesOfInterest
       }
       // referralCode,
       // referredBy
