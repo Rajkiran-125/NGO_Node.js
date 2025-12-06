@@ -9,6 +9,8 @@ const filepath = `${logConfig.filePathDirctory}/${logConfig.AppName}`;
 
 const loggerFunction = (level, message) => {
   try {
+    // ALWAYS PRINT TO CONSOLE
+    console.log(`[${level.toUpperCase()}] ${message}`);
     if (level === "info" && logConfig.infoDisable === false) {
       const log1 = logger(`${level}`, level);
       log1.info(message);

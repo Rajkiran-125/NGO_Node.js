@@ -37,6 +37,60 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
   }
 });
 
+// Update ONLY hours for a pending volunteer entry
+router.put("/edit-hours/:id", adminAuth, async (req, res) => {
+  const route = "PUT /edit-hours/:id";
+
+  try {
+    loggerFunction("info", `${route} - API execution started. id=${req.params.id}`);
+    loggerFunction("debug", `${route} - Incoming body: ${JSON.stringify(req.body)}`);
+
+    const { hours } = req.body;
+
+    // Validate hours present
+    if (!hours) {
+      loggerFunction("warn", `${route} - Missing hours field`);
+      return res.status(400).json({ message: "Hours field is required" });
+    }
+
+    // Validate numeric
+    const parsedHours = parseFloat(hours);
+    if (isNaN(parsedHours) || parsedHours <= 0) {
+      loggerFunction("warn", `${route} - Invalid hours value: ${hours}`);
+      return res.status(400).json({ message: "Hours must be a positive number" });
+    }
+
+    const entry = await VolunteerHours.findById(req.params.id);
+
+    if (!entry) {
+      loggerFunction("warn", `${route} - Entry not found`);
+      return res.status(404).json({ message: "Hours entry not found" });
+    }
+
+    // Only pending entries allowed
+    if (entry.status !== "pending") {
+      loggerFunction("warn", `${route} - Cannot update. Status=${entry.status}`);
+      return res.status(400).json({
+        message: "Only pending entries can be edited"
+      });
+    }
+
+    // Update only the hours field
+    entry.hours = parsedHours;
+    await entry.save();
+
+    loggerFunction("info", `${route} - Hours updated successfully. id=${req.params.id} hours=${parsedHours}`);
+
+    res.json({
+      message: "Hours updated successfully",
+      entry
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 // Approve or reject hours
 // router.put("/review-hours/:id", adminAuth, async (req, res) => {
 //   const route = "PUT /review-hours/:id";
@@ -326,7 +380,8 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
     loggerFunction(
       "debug",
-      `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${hoursEntry.status
+      `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${
+        hoursEntry.status
       }`
     );
 
