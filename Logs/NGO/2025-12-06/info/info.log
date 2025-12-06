@@ -240,3 +240,389 @@
 2025-12-06 02:15:23:2323 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
 2025-12-06 02:15:23:2323 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
 2025-12-06 02:15:23:2323 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:03:12:1212 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:03:12:1212 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:03:12:1212 : | info | "GET /newTier - New tier unlocked! unlockedTier=Change Catalyst userId=69334451735b7c59b5c13238" |
+2025-12-06 11:03:12:1212 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:03:12:1212 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:12:24:2424 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:12:24:2424 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:12:24:2424 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:12:24:2424 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:13:18:1818 : | info | "POST /submit - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:13:19:1919 : | info | "POST /submit - Response sent successfully." |
+2025-12-06 11:13:19:1919 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:13:19:1919 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:14:01:011 : | info | "POST /login - API execution started." |
+2025-12-06 11:14:01:011 : | info | "POST /login - Response sent successfully." |
+2025-12-06 11:14:02:022 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - API execution started." |
+2025-12-06 11:14:02:022 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 11:14:02:022 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:02:022 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 11:14:02:022 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 11:14:02:022 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 11:14:02:022 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 11:14:02:022 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - API execution started." |
+2025-12-06 11:14:02:022 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 11:14:02:022 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 11:14:02:022 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 11:14:02:022 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 11:14:02:022 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 11:14:02:022 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 11:14:02:022 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 11:14:10:1010 : | info | "PUT /review-hours/:id - API execution started. Id=6933c276f19a82f8ad7e818b" |
+2025-12-06 11:14:10:1010 : | info | "PUT /review-hours/:id - Hours entry updated and saved. Id=6933c276f19a82f8ad7e818b newStatus=approved" |
+2025-12-06 11:14:10:1010 : | info | "PUT /review-hours/:id - Volunteer updated. volunteerId=69334451735b7c59b5c13238 totalHoursAfter=315 tierBefore=Change Catalyst tierAfter=Legacy Leader badgeAdded=true" |
+2025-12-06 11:14:11:1111 : | info | "PUT /review-hours/:id - Approval email sent" |
+2025-12-06 11:14:11:1111 : | info | "PUT /review-hours/:id - Tier upgrade email sent" |
+2025-12-06 11:14:11:1111 : | info | "PUT /review-hours/:id - Response sent successfully. Id=6933c276f19a82f8ad7e818b" |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - API execution started." |
+2025-12-06 11:14:11:1111 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 11:14:11:1111 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 11:14:11:1111 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 11:14:11:1111 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 11:14:11:1111 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 11:14:11:1111 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - API execution started." |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 11:14:11:1111 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 11:14:42:4242 : | info | "POST /login - API execution started." |
+2025-12-06 11:14:43:4343 : | info | "POST /login - Response sent successfully." |
+2025-12-06 11:14:43:4343 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:14:43:4343 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:14:43:4343 : | info | "GET /newTier - New tier unlocked! unlockedTier=Legacy Leader userId=69334451735b7c59b5c13238" |
+2025-12-06 11:14:43:4343 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:14:43:4343 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:16:16:1616 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:16:16:1616 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:18:10:1010 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:18:10:1010 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:18:10:1010 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:18:10:1010 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:19:51:5151 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:19:51:5151 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:19:51:5151 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:19:51:5151 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:20:38:3838 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:20:38:3838 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:20:38:3838 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:20:38:3838 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:21:11:1111 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:21:11:1111 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:21:11:1111 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:21:11:1111 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:28:21:2121 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:28:21:2121 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:28:21:2121 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:28:21:2121 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:29:57:5757 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:29:57:5757 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:29:57:5757 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:29:57:5757 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:30:10:1010 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:30:10:1010 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:30:10:1010 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:30:10:1010 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:32:46:4646 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:32:46:4646 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:32:46:4646 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:32:46:4646 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:33:22:2222 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:33:22:2222 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:33:22:2222 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:33:22:2222 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:34:21:2121 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:34:21:2121 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:34:21:2121 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:34:21:2121 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:35:18:1818 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:35:18:1818 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:35:18:1818 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:35:18:1818 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:36:33:3333 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:36:33:3333 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:36:33:3333 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:36:33:3333 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:13:1313 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:13:1313 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:13:1313 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:13:1313 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:34:3434 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:34:3434 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:34:3434 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:34:3434 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:48:4848 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:48:4848 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:48:4848 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:37:48:4848 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:38:07:077 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:38:07:077 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:38:07:077 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:38:07:077 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:15:1515 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:15:1515 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:15:1515 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:15:1515 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:51:5151 : | info | "POST /login - API execution started." |
+2025-12-06 11:39:52:5252 : | info | "POST /login - Response sent successfully." |
+2025-12-06 11:39:52:5252 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:52:5252 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:52:5252 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:39:52:5252 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:25:2525 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:25:2525 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:25:2525 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:25:2525 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:33:3333 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:33:3333 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:33:3333 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 11:41:33:3333 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:08:088 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:08:088 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:09:099 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:09:099 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:35:3535 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:35:3535 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:35:3535 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:52:35:3535 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:55:13:1313 : | info | "POST /login - API execution started." |
+2025-12-06 13:55:14:1414 : | info | "POST /login - Response sent successfully." |
+2025-12-06 13:55:14:1414 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 13:55:14:1414 : | info | "GET /newTier - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 13:55:14:1414 : | info | "GET /newTier - Sending response. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 13:55:14:1414 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 13:55:54:5454 : | info | "POST /login - API execution started." |
+2025-12-06 13:55:54:5454 : | info | "POST /login - Response sent successfully." |
+2025-12-06 13:55:54:5454 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:55:54:5454 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:55:54:5454 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:55:54:5454 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:59:43:4343 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:59:43:4343 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:59:43:4343 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 13:59:43:4343 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:01:12:1212 : | info | "POST /login - API execution started." |
+2025-12-06 14:01:13:1313 : | info | "POST /login - Response sent successfully." |
+2025-12-06 14:01:13:1313 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:01:13:1313 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:01:13:1313 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:01:13:1313 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:01:13:1313 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:01:13:1313 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:01:13:1313 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - API execution started." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:01:13:1313 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:01:13:1313 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:01:13:1313 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - API execution started." |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:01:13:1313 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:03:50:5050 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:03:50:5050 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:03:50:5050 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:03:50:5050 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:03:50:5050 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - API execution started." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:03:50:5050 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:03:50:5050 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:03:50:5050 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:03:50:5050 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - API execution started." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:03:50:5050 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:03:50:5050 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:03:51:5151 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:04:38:3838 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:04:38:3838 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:04:38:3838 : | info | "GET /stats - API execution started." |
+2025-12-06 14:04:38:3838 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:04:38:3838 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:04:38:3838 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:04:38:3838 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:04:38:3838 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:04:38:3838 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:04:38:3838 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:04:39:3939 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:04:39:3939 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - API execution started." |
+2025-12-06 14:04:39:3939 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:04:39:3939 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:04:39:3939 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:07:22:2222 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - API execution started." |
+2025-12-06 14:07:22:2222 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:07:22:2222 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:07:22:2222 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:07:22:2222 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:07:22:2222 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:07:22:2222 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:07:22:2222 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - API execution started." |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:07:22:2222 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:07:22:2222 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:07:22:2222 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:09:03:033 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:03:033 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:03:033 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - API execution started." |
+2025-12-06 14:09:03:033 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:09:03:033 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:09:03:033 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:09:03:033 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:09:03:033 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:09:03:033 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:09:03:033 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:09:03:033 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:09:03:033 : | info | "GET /stats - API execution started." |
+2025-12-06 14:09:03:033 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:09:03:033 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:09:36:3636 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:36:3636 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - API execution started." |
+2025-12-06 14:09:36:3636 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:09:36:3636 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:36:3636 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:09:36:3636 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:09:36:3636 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:09:36:3636 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - API execution started." |
+2025-12-06 14:09:36:3636 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:09:36:3636 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - pendingSubmissions=5" |
+2025-12-06 14:09:36:3636 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:11:42:4242 : | info | "POST /login - API execution started." |
+2025-12-06 14:11:42:4242 : | info | "POST /login - Response sent successfully." |
+2025-12-06 14:11:42:4242 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:11:42:4242 : | info | "GET /newTier - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:11:42:4242 : | info | "GET /newTier - Sending response. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:11:42:4242 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:12:11:1111 : | info | "POST /submit - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:12:11:1111 : | info | "POST /submit - Response sent successfully." |
+2025-12-06 14:12:11:1111 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:12:11:1111 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 14:12:39:3939 : | info | "POST /login - API execution started." |
+2025-12-06 14:12:40:4040 : | info | "POST /login - Response sent successfully." |
+2025-12-06 14:12:40:4040 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:12:40:4040 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:12:40:4040 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:12:40:4040 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - API execution started." |
+2025-12-06 14:12:40:4040 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:12:40:4040 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:12:40:4040 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:12:40:4040 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:12:40:4040 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - API execution started." |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:12:40:4040 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:12:40:4040 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:13:21:2121 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:21:2121 : | info | "GET /stats - API execution started." |
+2025-12-06 14:13:21:2121 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:13:21:2121 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:21:2121 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:13:21:2121 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:22:2222 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:13:22:2222 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:13:22:2222 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - API execution started." |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:13:22:2222 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:13:22:2222 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:13:22:2222 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - API execution started." |
+2025-12-06 14:13:58:5858 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:58:5858 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:13:58:5858 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:13:58:5858 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:13:58:5858 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:13:58:5858 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:13:58:5858 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:13:58:5858 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - API execution started." |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:13:58:5858 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:13:58:5858 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:13:58:5858 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:15:33:3333 : | info | "GET /dashboard - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:15:33:3333 : | info | "GET /newTier - API execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - API execution started." |
+2025-12-06 14:15:33:3333 : | info | "GET /newTier - Sending response. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:15:33:3333 : | info | "GET /dashboard - Response sent successfully. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:15:33:3333 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:15:33:3333 : | info | "GET /admin/summary - Execution started. userId=68c8351b1eee63d9c051fc7e" |
+2025-12-06 14:15:33:3333 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 14:15:33:3333 : | info | "GET /admin/summary - Summary fetched successfully." |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - API execution started." |
+2025-12-06 14:15:33:3333 : | info | "GET /pending-hours - API execution started." |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - totalVolunteers=9" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - totalHours=[object Object]" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - pendingSubmissions=6" |
+2025-12-06 14:15:33:3333 : | info | "GET /stats - Response sent successfully." |
+2025-12-06 14:15:33:3333 : | info | "GET /pending-hours - Response sent successfully." |
