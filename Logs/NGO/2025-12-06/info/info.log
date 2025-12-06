@@ -626,3 +626,25 @@
 2025-12-06 14:15:33:3333 : | info | "GET /stats - pendingSubmissions=6" |
 2025-12-06 14:15:33:3333 : | info | "GET /stats - Response sent successfully." |
 2025-12-06 14:15:33:3333 : | info | "GET /pending-hours - Response sent successfully." |
+2025-12-06 15:37:10:1010 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 15:37:10:1010 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 15:38:33:3333 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 15:38:33:3333 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 15:38:45:4545 : | info | "GET /dashboard - API execution started. userId=69334451735b7c59b5c13238" |
+2025-12-06 15:38:45:4545 : | info | "GET /dashboard - Response sent successfully. userId=69334451735b7c59b5c13238" |
+2025-12-06 19:32:18:1818 : | info | "POST /login - API execution started." |
+2025-12-06 19:32:19:1919 : | info | "POST /login - Response sent successfully." |
+2025-12-06 19:32:20:2020 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:32:20:2020 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:33:25:2525 : | info | "POST /submit - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:33:25:2525 : | info | "POST /submit - Response sent successfully." |
+2025-12-06 19:33:25:2525 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:33:25:2525 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:34:13:1313 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:34:13:1313 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:36:40:4040 : | info | "POST /login - API execution started." |
+2025-12-06 19:36:41:4141 : | info | "POST /login - Response sent successfully." |
+2025-12-06 19:36:41:4141 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:36:41:4141 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:37:47:4747 : | info | "GET /dashboard - API execution started. userId=68c8fd17c743b48c4e314119" |
+2025-12-06 19:37:47:4747 : | info | "GET /dashboard - Response sent successfully. userId=68c8fd17c743b48c4e314119" |
