@@ -1,0 +1,18 @@
+{
+  "Kindness Ambassador": {
+    "subject": "🎉 You’re a Kindness Ambassador!",
+    "message": "Hooray! NEST4US is proud to recognize you as a <strong>KINDNESS AMBASSADOR</strong> for your 50+ hours of volunteer service. Thank you for spreading kindness and making the world brighter with every act you do!"
+  },
+  "Change Catalyst": {
+    "subject": "🔥 You’ve Unlocked the Change Catalyst Tier!",
+    "message": "Woohoo! NEST4US is proud to recognize you as a <strong>CHANGE CATALYST</strong> for your 100+ hours of volunteer service. Your passion and drive for making a difference are sparking real, lasting impact in communities near and far!"
+  },
+  "Service Champion": {
+    "subject": "🏆 Welcome, Service Champion!",
+    "message": "Hey there, changemaker! NEST4US is proud to recognize you as a <strong>SERVICE CHAMPION</strong> for your 150+ hours of volunteer service. Your consistent service uplifts lives and advances our collective vision of a more caring world for all!"
+  },
+  "Legacy Leader": {
+    "subject": "👑 You Are Now a Legacy Leader!",
+    "message": "You’ve gone above and beyond! NEST4US is proud to recognize you as a <strong>LEGACY LEADER</strong> for your 250+ hours of volunteer service. Your dedication has built a legacy of kindness and impact that will inspire generations to come!"
+  }
+}

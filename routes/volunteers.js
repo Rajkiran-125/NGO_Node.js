@@ -7,6 +7,7 @@ const VolunteerHours = require("../models/VolunteerHours");
 const router = express.Router();
 const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
+const tierMessages = require("../config/tierMessages.json");
 
 // // Configure multer for file uploads
 // const storage = multer.diskStorage({
@@ -47,6 +48,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
+  // limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif/;
     const ext = allowed.test(path.extname(file.originalname).toLowerCase());
@@ -167,12 +169,20 @@ router.get("/newTier", auth, async (req, res) => {
 
     let newTierUnlocked = false;
     let unlockedTier = null;
+    let tierContent = null;
 
     // Compare current tier with last acknowledged tier
     if (user.tier !== user.lastAcknowledgedTier) {
       newTierUnlocked = true;
       unlockedTier = user.tier;
       loggerFunction("info", `${route} - New tier unlocked! unlockedTier=${unlockedTier} userId=${userId}`);
+
+      // Load content from tierMessages.json
+      tierContent = tierMessages[unlockedTier] || null;
+
+      if (!tierContent) {
+        loggerFunction("warn", `${route} - No tier message found in tierMessages.json for tier: ${unlockedTier}`);
+      }
 
       // Update so next login does NOT send again
       user.lastAcknowledgedTier = user.tier;
@@ -183,7 +193,8 @@ router.get("/newTier", auth, async (req, res) => {
       message: "Login successful",
       user,
       newTierUnlocked,
-      unlockedTier
+      unlockedTier,
+      tierContent
     };
 
     loggerFunction("info", `${route} - Sending response. userId=${userId}`);
@@ -224,7 +235,7 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     loggerFunction("info", `${route} - Started. userId=${req.user._id}`);
     loggerFunction("debug", `${route} - Incoming Body: ${JSON.stringify(req.body)}`);
 
-    const { fullName, schoolOrganization, dateOfBirth, phoneNumber, location, causesOfInterest } = req.body;
+    const { fullName, schoolOrganization, dateOfBirth, phoneNumber, state, country, causesOfInterest } = req.body;
 
     let updateData = {};
 
@@ -233,15 +244,14 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     }
 
     const requiredFields = {
-      email,
-      password,
       fullName,
       // firstName,
       // lastName,
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
-      location
+      state,
+      country
     };
 
     for (const [key, value] of Object.entries(requiredFields)) {
@@ -250,9 +260,9 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
       }
     }
 
-    if (!location.state || !location.country) {
-      return res.status(400).json({ message: "Location (state and country) is required" });
-    }
+    // if (!location.state || !location.country) {
+    //   return res.status(400).json({ message: "Location (state and country) is required" });
+    // }
 
     // ----------------------------
     // 1️⃣ Handle profile picture
@@ -276,15 +286,11 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     // ----------------------------
     // 3️⃣ Location (state / country)
     // ----------------------------
-    if (location) {
-      const { state, country } = location;
-
-      if (state !== undefined) {
-        updateData["profile.location.state"] = state;
-      }
-      if (country !== undefined) {
-        updateData["profile.location.country"] = country;
-      }
+    if (state !== undefined) {
+      updateData["profile.location.state"] = state;
+    }
+    if (country !== undefined) {
+      updateData["profile.location.country"] = country;
     }
     // ----------------------------
     // 4️⃣ Causes of interest (array)

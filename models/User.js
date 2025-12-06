@@ -90,7 +90,7 @@ const userSchema = new mongoose.Schema({
   },
 
   createdAt: { type: Date, default: Date.now },
-
+  lastAcknowledgedTier: { type: String, default: "None" },
   resetPasswordCode: String,
   resetPasswordExpires: Date
 });

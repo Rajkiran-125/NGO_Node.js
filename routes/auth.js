@@ -153,7 +153,8 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
-      location,
+      state,
+      country,
       causesOfInterest
       // referredBy
     } = req.body;
@@ -173,7 +174,8 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
-      location
+      state,
+      country
     };
 
     for (const [key, value] of Object.entries(requiredFields)) {
@@ -182,9 +184,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       }
     }
 
-    if (!location.state || !location.country) {
-      return res.status(400).json({ message: "Location (state and country) is required" });
-    }
+    // if (!location.state || !location.country) {
+    //   return res.status(400).json({ message: "Location (state and country) is required" });
+    // }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -213,27 +215,28 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
         dateOfBirth,
         phoneNumber,
         location: {
-          state: location?.state || null,
-          country: location?.country || null
+          state: state,
+          country: country
         },
         profilePicture: profilePicturePath,
-        causesOfInterest: causesOfInterest ? JSON.parse(causesOfInterest) : []
+        // causesOfInterest: causesOfInterest ? JSON.parse(causesOfInterest) : []
+        causesOfInterest: causesOfInterest
       }
       // referralCode,
       // referredBy
     });
 
     // ✅ Handle referral tracking
-    if (referredBy) {
-      const referrer = await User.findOne({ referralCode: referredBy });
-      if (referrer) {
-        referrer.referralCount += 1;
-        if (referrer.referralCount >= 5 && !referrer.badges.includes("Social Butterfly")) {
-          referrer.badges.push("Social Butterfly");
-        }
-        await referrer.save();
-      }
-    }
+    // if (referredBy) {
+    //   const referrer = await User.findOne({ referralCode: referredBy });
+    //   if (referrer) {
+    //     referrer.referralCount += 1;
+    //     if (referrer.referralCount >= 5 && !referrer.badges.includes("Social Butterfly")) {
+    //       referrer.badges.push("Social Butterfly");
+    //     }
+    //     await referrer.save();
+    //   }
+    // }
 
     await user.save();
 
