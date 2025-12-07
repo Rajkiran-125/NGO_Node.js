@@ -138,6 +138,7 @@ router.get("/dashboard", auth, async (req, res) => {
       thisYearHours: thisYearTotal,
       tier,
       badges: user.badges,
+      tierMessages,
       referralCode: user.referralCode,
       hoursHistory: hoursHistory.map(entry => ({
         id: entry._id,
