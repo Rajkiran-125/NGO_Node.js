@@ -395,6 +395,255 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
   }
 });
 
+// router.put("/review-hours/:id", adminAuth, async (req, res) => {
+//   const route = "PUT /review-hours/:id";
+//   try {
+//     loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+//     loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
+
+//     const { status, rejectionReason } = req.body;
+
+//     if (!["approved", "rejected"].includes(status)) {
+//       loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
+//       return res.status(400).json({ message: "Invalid status" });
+//     }
+
+//     const hoursEntry = await VolunteerHours.findById(req.params.id);
+//     if (!hoursEntry) {
+//       loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
+//       return res.status(404).json({ message: "Hours entry not found" });
+//     }
+//     loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}`);
+
+//     // Update hours entry fields
+//     hoursEntry.status = status;
+//     hoursEntry.reviewedAt = new Date();
+//     hoursEntry.reviewedBy = req.user._id;
+
+//     if (status === "rejected") {
+//       hoursEntry.rejectionReason = rejectionReason || "";
+//       loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
+//     } else {
+//       // Clear rejection reason if approving
+//       hoursEntry.rejectionReason = undefined;
+//     }
+
+//     await hoursEntry.save();
+//     loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
+
+//     // Prepare to send email to volunteer
+//     const volunteer = await User.findById(hoursEntry.volunteerId);
+//     if (!volunteer) {
+//       loggerFunction("warn", `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`);
+//     }
+
+//     // Helper function to determine tier based on hours
+//     const getTierForHours = hours => {
+//       if (hours >= 250) return "Legacy Leader";
+//       if (hours >= 150) return "Service Champion";
+//       if (hours >= 100) return "Change Catalyst";
+//       if (hours >= 50) return "Kindness Ambassador";
+//       return "None";
+//     };
+
+//     // If approved, update volunteer's total hours and check for tier upgrades
+//     let newTier = null;
+//     let previousTier = null;
+//     const tiersUnlocked = []; // Track all tiers unlocked in this approval
+
+//     if (status === "approved" && volunteer) {
+//       const previousTotalHours = volunteer.totalHours || 0;
+//       previousTier = getTierForHours(previousTotalHours);
+
+//       // Update total hours
+//       volunteer.totalHours = previousTotalHours + (hoursEntry.hours || 0);
+
+//       // Update this year's hours
+//       const currentYear = new Date().getFullYear();
+//       const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
+//       if (serviceYear === currentYear) {
+//         volunteer.thisYearHours = (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
+//       }
+
+//       // Determine new tier
+//       newTier = getTierForHours(volunteer.totalHours);
+
+//       // Define tier thresholds in ascending order
+//       const tierThresholds = [
+//         { name: "Kindness Ambassador", hours: 50 },
+//         { name: "Change Catalyst", hours: 100 },
+//         { name: "Service Champion", hours: 150 },
+//         { name: "Legacy Leader", hours: 250 }
+//       ];
+
+//       // Find all tiers that were crossed
+//       for (const tier of tierThresholds) {
+//         // If previous hours were below this tier and new hours are at or above it
+//         if (previousTotalHours < tier.hours && volunteer.totalHours >= tier.hours) {
+//           tiersUnlocked.push(tier.name);
+
+//           // Add badge if not already present
+//           if (!volunteer.badges.includes(tier.name)) {
+//             volunteer.badges.push(tier.name);
+//           }
+//         }
+//       }
+
+//       // Update tier to the highest achieved
+//       if (newTier !== previousTier) {
+//         volunteer.tier = newTier;
+//         volunteer.lastAchievedTier = newTier;
+//         volunteer.lastTierUpdatedAt = new Date();
+//       }
+
+//       await volunteer.save();
+//       loggerFunction(
+//         "info",
+//         `${route} - Volunteer updated. volunteerId=${
+//           hoursEntry.volunteerId
+//         } totalHoursBefore=${previousTotalHours} totalHoursAfter=${
+//           volunteer.totalHours
+//         } tierBefore=${previousTier} tierAfter=${newTier} tiersUnlocked=${JSON.stringify(tiersUnlocked)}`
+//       );
+//     }
+
+//     // --------------- Prepare email(s) ---------------
+//     if (volunteer && volunteer.email) {
+//       // helper for formatting
+//       const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+
+//       const entryInfoHtml = `
+//     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
+//     <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
+//     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
+//     <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
+//     <hr />
+//   `;
+
+//       // ----------------------------------------------------
+//       // 1️⃣ SEND APPROVAL EMAIL
+//       // ----------------------------------------------------
+//       if (status === "approved") {
+//         const approvalHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
+//       ${entryInfoHtml}
+//       <p>Thank you for contributing your time and effort!</p>
+//       <p>NEST4US Team</p>
+//     `;
+
+//         const msg1 = {
+//           to: volunteer.email,
+//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//           subject: "Your Volunteer Hours Have Been Approved",
+//           html: approvalHtml
+//         };
+
+//         try {
+//           loggerFunction("debug", `${route} - Sending approval email to ${volunteer.email}`);
+//           await sgMail.send(msg1);
+//           loggerFunction("info", `${route} - Approval email sent`);
+//         } catch (err) {
+//           loggerFunction("error", `${route} - Approval email failed: ${err.message}`);
+//         }
+//       }
+
+//       // ----------------------------------------------------
+//       // 2️⃣ SEND REJECTION EMAIL
+//       // ----------------------------------------------------
+//       if (status === "rejected") {
+//         const rejectionHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
+//       ${entryInfoHtml}
+//       <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+//       <p>You may correct & re-submit your entry.</p>
+//       <p>NEST4US Team</p>
+//     `;
+
+//         const msg2 = {
+//           to: volunteer.email,
+//           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//           subject: "Your Volunteer Hours Submission Was Rejected",
+//           html: rejectionHtml
+//         };
+
+//         try {
+//           loggerFunction("debug", `${route} - Sending rejection email`);
+//           await sgMail.send(msg2);
+//           loggerFunction("info", `${route} - Rejection email sent`);
+//         } catch (err) {
+//           loggerFunction("error", `${route} - Rejection email failed: ${err.message}`);
+//         }
+//       }
+
+//       // ----------------------------------------------------
+//       // 3️⃣ SEND TIER UPGRADE EMAIL(S) - One for each tier unlocked
+//       // ----------------------------------------------------
+//       if (status === "approved" && tiersUnlocked.length > 0) {
+//         // Send emails in order (from lowest to highest tier)
+//         for (const tierName of tiersUnlocked) {
+//           const tierInfo = tierMessages[tierName];
+
+//           if (!tierInfo) {
+//             loggerFunction("warn", `${route} - No tier message found for tier: ${tierName}`);
+//             continue;
+//           }
+
+//           const tierHtml = `
+//       <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+//       <p><strong>🎉 Congratulations!</strong></p>
+//       <p>${tierInfo.message}</p>
+//       <br/>
+//       <p>NEST4US Team</p>
+//     `;
+
+//           const msg3 = {
+//             to: volunteer.email,
+//             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
+//             subject: tierInfo.subject,
+//             html: tierHtml
+//           };
+
+//           try {
+//             loggerFunction("debug", `${route} - Sending tier upgrade email for tier=${tierName}`);
+//             await sgMail.send(msg3);
+//             loggerFunction("info", `${route} - Tier upgrade email sent for ${tierName}`);
+
+//             // Small delay between emails to ensure they arrive in order
+//             await new Promise(resolve => setTimeout(resolve, 1000));
+//           } catch (err) {
+//             loggerFunction("error", `${route} - Tier email failed for ${tierName}: ${err.message}`);
+//           }
+//         }
+//       }
+//     } else {
+//       loggerFunction(
+//         "warn",
+//         `${route} - Volunteer email missing, skipping notification. volunteerId=${hoursEntry.volunteerId}`
+//       );
+//     }
+
+//     // Final response
+//     loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
+//     loggerFunction(
+//       "debug",
+//       `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${
+//         hoursEntry.status
+//       }`
+//     );
+
+//     res.json({
+//       message: `Hours ${status} successfully`,
+//       entry: hoursEntry,
+//       tiersUnlocked: tiersUnlocked // Include info about unlocked tiers
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
 // Get all volunteers summary
 router.get("/volunteers", adminAuth, async (req, res) => {
   const route = "GET /volunteers";
@@ -861,4 +1110,306 @@ router.post("/user-details", adminAuth, async (req, res) => {
   }
 });
 
+// ============================================================
+// 📊 API 1: Volunteer Age Distribution (Bar Chart Data)
+// ============================================================
+router.get("/analytics/age-distribution", adminAuth, async (req, res) => {
+  const route = "GET /analytics/age-distribution";
+  try {
+    loggerFunction("info", `${route} - API execution started`);
+
+    // Fetch all volunteers with dateOfBirth
+    const volunteers = await User.find({
+      role: "volunteer",
+      "profile.dateOfBirth": { $exists: true, $ne: null }
+    }).select("profile.dateOfBirth");
+
+    loggerFunction("debug", `${route} - Found ${volunteers.length} volunteers with dateOfBirth`);
+
+    // Initialize age group counters
+    const ageGroups = {
+      "9-13": 0,
+      "14-18": 0,
+      "19-25": 0,
+      "26-50": 0,
+      "51+": 0
+    };
+
+    const currentDate = new Date();
+
+    // Calculate age and categorize
+    volunteers.forEach(volunteer => {
+      const birthDate = new Date(volunteer.profile.dateOfBirth);
+      let age = currentDate.getFullYear() - birthDate.getFullYear();
+
+      // Adjust age if birthday hasn't occurred yet this year
+      const monthDiff = currentDate.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      // Categorize by age group
+      if (age >= 9 && age <= 13) {
+        ageGroups["9-13"]++;
+      } else if (age >= 14 && age <= 18) {
+        ageGroups["14-18"]++;
+      } else if (age >= 19 && age <= 25) {
+        ageGroups["19-25"]++;
+      } else if (age >= 26 && age <= 50) {
+        ageGroups["26-50"]++;
+      } else if (age >= 51) {
+        ageGroups["51+"]++;
+      }
+    });
+
+    loggerFunction("info", `${route} - Age distribution calculated successfully`);
+    loggerFunction("debug", `${route} - Distribution: ${JSON.stringify(ageGroups)}`);
+
+    // Format response for bar chart
+    const response = {
+      labels: ["9-13", "14-18", "19-25", "26-50", "51+"],
+      data: [ageGroups["9-13"], ageGroups["14-18"], ageGroups["19-25"], ageGroups["26-50"], ageGroups["51+"]],
+      totalVolunteers: volunteers.length
+    };
+
+    loggerFunction("info", `${route} - Response sent successfully`);
+    res.json(response);
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ============================================================
+// 📊 API: Hours by Service Category (Pie Chart Data)
+// ============================================================
+router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
+  const route = "GET /analytics/hours-by-category";
+  try {
+    loggerFunction("info", `${route} - API execution started`);
+
+    // Fetch all approved volunteer hours
+    const approvedHours = await VolunteerHours.find({ status: "approved" }).select("serviceType hours");
+
+    loggerFunction("debug", `${route} - Found ${approvedHours.length} approved hour entries`);
+
+    // Define the label mapping (normalize service types)
+    const labelMapping = {
+      "NEST4US Service Projects": "Service Projects",
+      "NEST4US Community Events": "Community Events",
+      "NEST4US Food Rescues": "Food Rescues",
+      "NEST Tutors": "NEST Tutors",
+      "NEST4US Notes of Kindness": "Notes of Kindness",
+      "NEST4US Workshops": "Workshops",
+      "NEST4US Donations": "Donations",
+      Others: "Other"
+    };
+
+    // Define the desired order
+    const categoryOrder = [
+      "Service Projects",
+      "Community Events",
+      "Food Rescues",
+      "NEST Tutors",
+      "Notes of Kindness",
+      "Workshops",
+      "Donations",
+      "Other"
+    ];
+
+    // Initialize category data
+    const categoryStats = {};
+    categoryOrder.forEach(cat => {
+      categoryStats[cat] = { hours: 0, count: 0 };
+    });
+
+    let totalHours = 0;
+
+    // Aggregate hours by normalized category
+    approvedHours.forEach(entry => {
+      const normalizedCategory = labelMapping[entry.serviceType] || "Other";
+
+      if (categoryStats[normalizedCategory]) {
+        categoryStats[normalizedCategory].hours += entry.hours || 0;
+        categoryStats[normalizedCategory].count += 1;
+        totalHours += entry.hours || 0;
+      }
+    });
+
+    loggerFunction("debug", `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`);
+    loggerFunction("info", `${route} - Total hours across all categories: ${totalHours}`);
+
+    // Build response arrays in the specified order
+    const labels = [];
+    const data = [];
+    const counts = [];
+    const categories = [];
+
+    categoryOrder.forEach(category => {
+      const stats = categoryStats[category];
+      // Include ALL categories, even with 0 hours
+      labels.push(category);
+      data.push(stats.hours);
+      counts.push(stats.count);
+      categories.push({
+        name: category,
+        hours: stats.hours,
+        count: stats.count,
+        percentage: totalHours > 0 ? ((stats.hours / totalHours) * 100).toFixed(1) : "0.0"
+      });
+    });
+
+    loggerFunction("info", `${route} - Category data processed successfully`);
+
+    const response = {
+      labels: labels,
+      data: data,
+      counts: counts,
+      totalHours: totalHours,
+      categories: categories
+    };
+
+    loggerFunction("info", `${route} - Response sent successfully`);
+    loggerFunction("debug", `${route} - Final response: ${JSON.stringify(response)}`);
+
+    res.json(response);
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// ============================================================
+// 📊 API: Combined Analytics Dashboard
+// ============================================================
+router.get("/analytics/dashboard", adminAuth, async (req, res) => {
+  const route = "GET /analytics/dashboard";
+  try {
+    loggerFunction("info", `${route} - API execution started`);
+
+    // ========== AGE DISTRIBUTION ==========
+    const volunteers = await User.find({
+      role: "volunteer",
+      "profile.dateOfBirth": { $exists: true, $ne: null }
+    }).select("profile.dateOfBirth");
+
+    loggerFunction("debug", `${route} - Found ${volunteers.length} volunteers with dateOfBirth`);
+
+    const ageGroups = {
+      "9-13": 0,
+      "14-18": 0,
+      "19-25": 0,
+      "26-50": 0,
+      "51+": 0
+    };
+
+    const currentDate = new Date();
+    volunteers.forEach(volunteer => {
+      const birthDate = new Date(volunteer.profile.dateOfBirth);
+      let age = currentDate.getFullYear() - birthDate.getFullYear();
+      const monthDiff = currentDate.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())) {
+        age--;
+      }
+
+      if (age >= 9 && age <= 13) ageGroups["9-13"]++;
+      else if (age >= 14 && age <= 18) ageGroups["14-18"]++;
+      else if (age >= 19 && age <= 25) ageGroups["19-25"]++;
+      else if (age >= 26 && age <= 50) ageGroups["26-50"]++;
+      else if (age >= 51) ageGroups["51+"]++;
+    });
+
+    loggerFunction("info", `${route} - Age distribution calculated successfully`);
+
+    // ========== SERVICE CATEGORIES ==========
+    const approvedHours = await VolunteerHours.find({ status: "approved" }).select("serviceType hours");
+
+    loggerFunction("debug", `${route} - Found ${approvedHours.length} approved hour entries`);
+
+    const labelMapping = {
+      "NEST4US Service Projects": "Service Projects",
+      "NEST4US Community Events": "Community Events",
+      "NEST4US Food Rescues": "Food Rescues",
+      "NEST Tutors": "NEST Tutors",
+      "NEST4US Notes of Kindness": "Notes of Kindness",
+      "NEST4US Workshops": "Workshops",
+      "NEST4US Donations": "Donations",
+      Others: "Other"
+    };
+
+    const categoryOrder = [
+      "Service Projects",
+      "Community Events",
+      "Food Rescues",
+      "NEST Tutors",
+      "Notes of Kindness",
+      "Workshops",
+      "Donations",
+      "Other"
+    ];
+
+    const categoryStats = {};
+    categoryOrder.forEach(cat => {
+      categoryStats[cat] = { hours: 0, count: 0 };
+    });
+
+    let totalHours = 0;
+
+    approvedHours.forEach(entry => {
+      const normalizedCategory = labelMapping[entry.serviceType] || "Other";
+      if (categoryStats[normalizedCategory]) {
+        categoryStats[normalizedCategory].hours += entry.hours || 0;
+        categoryStats[normalizedCategory].count += 1;
+        totalHours += entry.hours || 0;
+      }
+    });
+
+    loggerFunction("debug", `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`);
+    loggerFunction("info", `${route} - Total service hours: ${totalHours}`);
+
+    const categoryLabels = [];
+    const categoryData = [];
+    const categoryCounts = [];
+    const categories = [];
+
+    categoryOrder.forEach(category => {
+      const stats = categoryStats[category];
+      // Include ALL categories, even with 0 hours
+      categoryLabels.push(category);
+      categoryData.push(stats.hours);
+      categoryCounts.push(stats.count);
+      categories.push({
+        name: category,
+        hours: stats.hours,
+        count: stats.count,
+        percentage: totalHours > 0 ? ((stats.hours / totalHours) * 100).toFixed(1) : "0.0"
+      });
+    });
+
+    loggerFunction("info", `${route} - Dashboard data compiled successfully`);
+
+    const response = {
+      ageDistribution: {
+        labels: ["9-13", "14-18", "19-25", "26-50", "51+"],
+        data: [ageGroups["9-13"], ageGroups["14-18"], ageGroups["19-25"], ageGroups["26-50"], ageGroups["51+"]],
+        totalVolunteers: volunteers.length
+      },
+      serviceCategories: {
+        labels: categoryLabels,
+        data: categoryData,
+        counts: categoryCounts,
+        totalHours: totalHours,
+        categories: categories
+      }
+    };
+
+    loggerFunction("info", `${route} - Response sent successfully`);
+    loggerFunction("debug", `${route} - Final response: ${JSON.stringify(response)}`);
+
+    res.json(response);
+  } catch (error) {
+    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 module.exports = router;
