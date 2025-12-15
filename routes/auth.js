@@ -147,9 +147,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
     const {
       email,
       password,
-      // firstName,
-      // lastName,
-      fullName,
+      firstName,
+      lastName,
+      // fullName,
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
@@ -168,9 +168,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
     const requiredFields = {
       email,
       password,
-      fullName,
-      // firstName,
-      // lastName,
+      // fullName,
+      firstName,
+      lastName,
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
@@ -208,9 +208,9 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       email,
       password,
       profile: {
-        // firstName,
-        // lastName,
-        fullName,
+        firstName,
+        lastName,
+        // fullName,
         schoolOrganization,
         dateOfBirth,
         phoneNumber,
@@ -580,6 +580,10 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
     user.resetPasswordCode = resetCode;
     user.resetPasswordExpires = resetCodeExpiry;
     await user.save({ validateBeforeSave: false });
+    const firstName = user.profile?.firstName || "";
+    const lastName = user.profile?.lastName || "";
+
+    const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
 
     // Prepare the SendGrid email
     const msg = {
@@ -587,7 +591,7 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
       from: "shubhamb0012@gmail.com",
       subject: "Your Password Reset Code",
       html: `
-        <p>Hello ${user.profile?.fullName || "Volunteer"},</p>
+        <p>Hello ${displayName},</p>
         <p>You requested to reset your password.</p>
         <p>Your 6-digit reset code is:</p>
         <h2 style="font-size: 28px; letter-spacing: 3px;">${resetCode}</h2>
@@ -688,7 +692,9 @@ router.get("/google/callback", async (req, res) => {
     const googleUser = JSON.parse(Buffer.from(id_token.split(".")[1], "base64").toString());
 
     const email = googleUser.email;
-    const name = googleUser.name;
+    // const name = googleUser.name;
+    const firstName = googleUser.given_name || "";
+    const lastName = googleUser.family_name || "";
     const picture = googleUser.picture;
 
     // 3️⃣ Find or create user in database
@@ -699,7 +705,9 @@ router.get("/google/callback", async (req, res) => {
         email,
         password: null, // password not needed for Google login
         profile: {
-          fullName: name,
+          // fullName: name,
+          firstName,
+          lastName,
           avatar: picture
         },
         authProvider: "google"

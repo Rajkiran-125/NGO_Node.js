@@ -6,9 +6,9 @@ const volunteerHoursSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
-  // firstName: { type: String, required: true },
-  // lastName: { type: String, required: true },
-  fullName: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  // fullName: { type: String, required: true },
   // schoolOrganization: { type: String, required: true },
   activityName: { type: String, required: true },
   serviceDate: { type: Date, required: true },
@@ -16,8 +16,9 @@ const volunteerHoursSchema = new mongoose.Schema({
     type: String,
     enum: [
       "NEST4US Service Projects",
-      "NEST4US Community Events",
+      "NEST4US Community/School Events",
       "NEST4US Food Rescues",
+      "NEST4US Community Resource Distributions",
       "NEST Tutors",
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",

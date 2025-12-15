@@ -61,7 +61,9 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["volunteer", "admin"], default: "volunteer" },
 
   profile: {
-    fullName: { type: String, required: false }, // Google user may not fill initially
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    // fullName: { type: String, required: false },
     profilePicture: String,
     schoolOrganization: { type: String },
     dateOfBirth: { type: Date },

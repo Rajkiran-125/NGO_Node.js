@@ -24,7 +24,7 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
     loggerFunction("info", `${route} - API execution started.`);
     const pendingHours = await VolunteerHours.find({ status: "pending" })
       // .populate("volunteerId", "profile.firstName profile.lastName email")
-      .populate("volunteerId", "profile.fullName email")
+      .populate("volunteerId", "profile.firstName profile.lastName email")
       .sort({ submittedAt: -1 });
 
     // loggerFunction("debug", `${route} - Response : ${pendingHours}`);
@@ -270,6 +270,10 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     if (volunteer && volunteer.email) {
       // helper for formatting
       const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+      const firstName = volunteer.profile?.firstName || "";
+      const lastName = volunteer.profile?.lastName || "";
+
+      const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
 
       const entryInfoHtml = `
     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
@@ -284,7 +288,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // ----------------------------------------------------
       if (status === "approved") {
         const approvalHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
       ${entryInfoHtml}
       <p>Thank you for contributing your time and effort!</p>
@@ -312,7 +316,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // ----------------------------------------------------
       if (status === "rejected") {
         const rejectionHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
       ${entryInfoHtml}
       <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
@@ -346,7 +350,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
         } else {
           const tierHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p><strong>🎉 Congratulations!</strong></p>
       <p>${tierInfo.message}</p>
       <br/>
@@ -768,15 +772,15 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
     // ✅ CASE 2: Report for specific volunteer
     if (type === "volunteer") {
       const volunteerRecords = await VolunteerHours.find(match)
-        // .populate("volunteerId", "firstName lastName")
-        .populate("volunteerId", "fullName")
+        .populate("volunteerId", "firstName lastName")
+        // .populate("volunteerId", "fullName")
         .sort({ serviceDate: -1 })
         .select("activityName serviceType serviceDate hours")
         .lean();
 
       const data = volunteerRecords.map(r => ({
-        // volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
-        volunteerName: `${r.volunteerId.fullName}`,
+        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+        // volunteerName: `${r.volunteerId.fullName}`,
         serviceType: r.serviceType,
         serviceActivity: r.activityName,
         dateOfService: r.serviceDate,
@@ -1023,7 +1027,9 @@ router.post("/tiers", adminAuth, async (req, res) => {
       {
         _id: 1,
         email: 1,
-        "profile.fullName": 1
+        // "profile.fullName": 1
+        "profile.firstName": 1,
+        "profile.lastName": 1
       }
     );
 
@@ -1055,7 +1061,9 @@ router.post("/tiers", adminAuth, async (req, res) => {
       .map(u => ({
         userId: u._id,
         email: u.email,
-        fullName: u.profile.fullName || "",
+        // fullName: u.profile.fullName || "",
+        firstName: u.profile.firstName || "",
+        lastName: u.profile.lastName || "",
         totalApprovedHours: hoursMap[u._id.toString()] || 0
       }))
       // 4️⃣ Sort by approved hours DESC
@@ -1088,7 +1096,9 @@ router.post("/user-details", adminAuth, async (req, res) => {
 
     return res.status(200).json({
       userId: user._id,
-      fullName: user.profile?.fullName || "",
+      // fullName: user.profile?.fullName || "",
+      firstName: user.profile?.firstName || "",
+      lastName: user.profile?.lastName || "",
       lifetimeHours: user.totalHours || 0,
       dateOfBirth: user.profile?.dateOfBirth || null,
       location: {

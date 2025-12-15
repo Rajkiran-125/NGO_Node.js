@@ -40,16 +40,17 @@ router.post(
   auth,
   upload.single("proofOfService"),
   [
-    // body("firstName").notEmpty(),
-    // body("lastName").notEmpty(),
-    body("fullName").notEmpty(),
+    body("firstName").notEmpty(),
+    body("lastName").notEmpty(),
+    // body("fullName").notEmpty(),
     // body("schoolOrganization").notEmpty(),
     body("activityName").notEmpty(),
     body("serviceDate").isISO8601(),
     body("serviceType").isIn([
       "NEST4US Service Projects",
-      "NEST4US Community Events",
+      "NEST4US Community/School Events",
       "NEST4US Food Rescues",
+      "NEST4US Community Resource Distributions",
       "NEST Tutors",
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
@@ -74,9 +75,9 @@ router.post(
       }
 
       const {
-        fullName,
-        // firstName,
-        // lastName,
+        // fullName,
+        firstName,
+        lastName,
         // schoolOrganization,
         activityName,
         serviceDate,
@@ -88,9 +89,9 @@ router.post(
 
       const volunteerHours = new VolunteerHours({
         volunteerId: req.user._id,
-        // firstName,
-        // lastName,
-        fullName,
+        firstName,
+        lastName,
+        // fullName,
         // schoolOrganization,
         activityName,
         serviceDate: new Date(serviceDate),
@@ -167,14 +168,17 @@ router.post(
   upload.single("proofOfService"),
   [
     body("id").notEmpty().withMessage("Entry ID required"),
-    body("fullName").notEmpty(),
+    // body("fullName").notEmpty(),
+    body("firstName").notEmpty(),
+    body("LastName").notEmpty(),
     body("activityName").notEmpty(),
     body("serviceDate").isISO8601(),
     body("serviceType").isIn([
       "NEST4US Service Projects",
-      "NEST4US Community Events",
+      "NEST4US Community/School Events",
       "NEST4US Food Rescues",
-      "NEST4 Tutors",
+      "NEST4US Community Resource Distributions",
+      "NEST Tutors",
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
@@ -199,7 +203,8 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id, fullName, activityName, serviceDate, serviceType, hours, description, isHistorical } = req.body;
+      const { id, firstName, lastName, activityName, serviceDate, serviceType, hours, description, isHistorical } =
+        req.body;
 
       // Check if entry exists & belongs to logged-in user
       const hoursEntry = await VolunteerHours.findOne({
@@ -215,7 +220,9 @@ router.post(
 
       // Prepare updates
       const updates = {
-        fullName,
+        // fullName,
+        firstName,
+        lastName,
         activityName,
         serviceDate: new Date(serviceDate),
         serviceType,
@@ -347,8 +354,8 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     const entry = await VolunteerHours.findById(id)
-      .populate("volunteerId", "email fullName") // adjust as needed
-      .populate("reviewedBy", "fullName")
+      .populate("volunteerId", "email firstName lastName") // adjust as needed
+      .populate("reviewedBy", "firstName lastName")
       .lean();
 
     if (!entry) {
@@ -405,9 +412,9 @@ router.patch(
       .withMessage("Invalid serviceType"),
     body("hours").optional().isFloat({ min: 0.1 }).withMessage("Hours must be a number"),
     body("status").optional().isIn(["pending", "approved", "rejected"]).withMessage("Invalid status"),
-    // body("firstName").optional().notEmpty(),
-    // body("lastName").optional().notEmpty(),
-    body("fullName").optional().notEmpty(),
+    body("firstName").optional().notEmpty(),
+    body("lastName").optional().notEmpty(),
+    // body("fullName").optional().notEmpty(),
     body("activityName").optional().notEmpty(),
     // body("schoolOrganization").optional().notEmpty(),
     body("description").optional().notEmpty()
@@ -466,9 +473,9 @@ router.patch(
 
       // Build updates only from allowed fields
       const allowed = [
-        // "firstName",
-        // "lastName",
-        "fullName",
+        "firstName",
+        "lastName",
+        // "fullName",
         // "schoolOrganization",
         "activityName",
         "serviceDate",

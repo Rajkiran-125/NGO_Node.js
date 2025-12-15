@@ -236,7 +236,8 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     loggerFunction("info", `${route} - Started. userId=${req.user._id}`);
     loggerFunction("debug", `${route} - Incoming Body: ${JSON.stringify(req.body)}`);
 
-    const { fullName, schoolOrganization, dateOfBirth, phoneNumber, state, country, causesOfInterest } = req.body;
+    const { firstName, lastName, schoolOrganization, dateOfBirth, phoneNumber, state, country, causesOfInterest } =
+      req.body;
 
     let updateData = {};
 
@@ -245,9 +246,9 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     }
 
     const requiredFields = {
-      fullName,
-      // firstName,
-      // lastName,
+      // fullName,
+      firstName,
+      lastName,
       schoolOrganization,
       dateOfBirth,
       phoneNumber,
@@ -276,7 +277,9 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     // ----------------------------
     // 2️⃣ Normal profile fields
     // ----------------------------
-    if (fullName !== undefined) updateData["profile.fullName"] = fullName;
+    // if (fullName !== undefined) updateData["profile.fullName"] = fullName;
+    if (firstName !== undefined) updateData["profile.firstName"] = firstName;
+    if (lastName !== undefined) updateData["profile.lastName"] = lastName;
 
     if (schoolOrganization !== undefined) updateData["profile.schoolOrganization"] = schoolOrganization;
 
@@ -484,7 +487,9 @@ router.get("/summary", auth, async (req, res) => {
     // Response payload
     const response = {
       volunteerId: req.user._id,
-      name: `${req.user.profile.fullName} `,
+      // name: `${req.user.profile.fullName} `,
+      firstName: `${req.user.profile.firstName} `,
+      lastName: `${req.user.profile.lastName} `,
       email: req.user.email,
       lifetimeHours,
       currentYearHours,
@@ -545,6 +550,37 @@ router.post("/change-password", auth, async (req, res) => {
   }
 });
 
+// Get all service types
+router.get("/service-types", (req, res) => {
+  const route = "GET /service-types";
+  try {
+    loggerFunction("info", `${route} - API execution started`);
+
+    const serviceTypes = [
+      "NEST4US Service Projects",
+      "NEST4US Community/School Events",
+      "NEST4US Food Rescues",
+      "NEST4US Community Resource Distributions",
+      "NEST Tutors",
+      "NEST4US Notes of Kindness",
+      "NEST4US Workshops",
+      "NEST4US Donations",
+      "Others"
+    ];
+
+    res.status(200).json({
+      success: true,
+      data: serviceTypes
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch service types"
+    });
+  }
+});
+
 // Get all users (Testing only)
 router.get("/users", async (req, res) => {
   const route = "GET /users";
@@ -567,8 +603,10 @@ router.get("/users", async (req, res) => {
 
     let query = {};
 
+    // 🔍 Search by email OR firstName OR lastName
     if (search) {
-      query.$or = [{ email: new RegExp(search, "i") }, { "profile.fullName": new RegExp(search, "i") }];
+      const regex = new RegExp(search, "i");
+      query.$or = [{ email: regex }, { "profile.firstName": regex }, { "profile.lastName": regex }];
     }
 
     if (role) query.role = role;
