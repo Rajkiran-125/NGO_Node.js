@@ -113,7 +113,7 @@ Password: password123
 - Can export his volunteer data
 
 Admin Account:
-Email: admin@nest4us.org 
+Email: admin@nest4us.org
 Password: admin123
 - Can view admin dashboard
 - Can approve/reject volunteer hours
