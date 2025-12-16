@@ -5,6 +5,7 @@ const User = require("../models/User");
 const router = express.Router();
 const loggerFunction = require("../utils/loggerFunction");
 const tierMessages = require("../config/tierMessages.json");
+const { body, validationResult } = require("express-validator");
 const sgMail = require("@sendgrid/mail");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
