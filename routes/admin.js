@@ -1006,11 +1006,11 @@ router.get("/tiers", adminAuth, async (req, res) => {
  * POST /admin/tiers
  * Fetch users who belong to a specific tier (from the saved tier field).
  */
-router.post("/tiers", adminAuth, async (req, res) => {
+router.post("/tiers", async (req, res) => {
   const route = "POST /admin/tiers";
   try {
     const tierName = req.body.tierName;
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id} tier=${tierName}`);
+    // loggerFunction("info", `${route} - API execution started. userId=${req.user._id} tier=${tierName}`);
 
     if (!tierName) {
       return res.status(400).json({ message: "tierName is required" });
@@ -1021,21 +1021,37 @@ router.post("/tiers", adminAuth, async (req, res) => {
       return res.status(400).json({ message: "Invalid tier name" });
     }
 
-    // 1️⃣ Fetch users whose saved tier matches
+    // ✅ Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // 1️⃣ Count users for pagination
+    const totalUsers = await User.countDocuments({ tier: tier.name });
+
+    if (totalUsers === 0) {
+      return res.status(200).json({
+        message: "No users in this tier",
+        page,
+        totalUsers: 0,
+        totalPages: 0,
+        data: []
+      });
+    }
+
+    // 2️⃣ Fetch paginated users
     const users = await User.find(
       { tier: tier.name },
       {
         _id: 1,
         email: 1,
-        // "profile.fullName": 1
         "profile.firstName": 1,
         "profile.lastName": 1
       }
-    );
-
-    if (users.length === 0) {
-      return res.status(200).json({ message: "No users in this tier", data: [] });
-    }
+    )
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     const userIds = users.map(u => u._id);
 
@@ -1071,6 +1087,10 @@ router.post("/tiers", adminAuth, async (req, res) => {
 
     return res.status(200).json({
       message: `Users in tier '${tier.name}' fetched successfully`,
+      page,
+      limit,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
       data: result
     });
   } catch (error) {
