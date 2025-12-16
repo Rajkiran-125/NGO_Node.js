@@ -24,7 +24,7 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
     loggerFunction("info", `${route} - API execution started.`);
     const pendingHours = await VolunteerHours.find({ status: "pending" })
       // .populate("volunteerId", "profile.firstName profile.lastName email")
-      .populate("volunteerId", "profile.fullName email")
+      .populate("volunteerId", "profile.firstName profile.lastName email")
       .sort({ submittedAt: -1 });
 
     // loggerFunction("debug", `${route} - Response : ${pendingHours}`);
@@ -37,59 +37,148 @@ router.get("/pending-hours", adminAuth, async (req, res) => {
   }
 });
 
-// Update ONLY hours for a pending volunteer entry
-router.put("/edit-hours/:id", adminAuth, async (req, res) => {
-  const route = "PUT /edit-hours/:id";
+// // Update ONLY hours for a pending volunteer entry
+// router.put("/edit-hours/:id", adminAuth, async (req, res) => {
+//   const route = "PUT /edit-hours/:id";
 
-  try {
-    loggerFunction("info", `${route} - API execution started. id=${req.params.id}`);
-    loggerFunction("debug", `${route} - Incoming body: ${JSON.stringify(req.body)}`);
+//   try {
+//     loggerFunction("info", `${route} - API execution started. id=${req.params.id}`);
+//     loggerFunction("debug", `${route} - Incoming body: ${JSON.stringify(req.body)}`);
 
-    const { hours } = req.body;
+//     const { hours } = req.body;
 
-    // Validate hours present
-    if (!hours) {
-      loggerFunction("warn", `${route} - Missing hours field`);
-      return res.status(400).json({ message: "Hours field is required" });
-    }
+//     // Validate hours present
+//     if (!hours) {
+//       loggerFunction("warn", `${route} - Missing hours field`);
+//       return res.status(400).json({ message: "Hours field is required" });
+//     }
 
-    // Validate numeric
-    const parsedHours = parseFloat(hours);
-    if (isNaN(parsedHours) || parsedHours <= 0) {
-      loggerFunction("warn", `${route} - Invalid hours value: ${hours}`);
-      return res.status(400).json({ message: "Hours must be a positive number" });
-    }
+//     // Validate numeric
+//     const parsedHours = parseFloat(hours);
+//     if (isNaN(parsedHours) || parsedHours <= 0) {
+//       loggerFunction("warn", `${route} - Invalid hours value: ${hours}`);
+//       return res.status(400).json({ message: "Hours must be a positive number" });
+//     }
 
-    const entry = await VolunteerHours.findById(req.params.id);
+//     const entry = await VolunteerHours.findById(req.params.id);
 
-    if (!entry) {
-      loggerFunction("warn", `${route} - Entry not found`);
-      return res.status(404).json({ message: "Hours entry not found" });
-    }
+//     if (!entry) {
+//       loggerFunction("warn", `${route} - Entry not found`);
+//       return res.status(404).json({ message: "Hours entry not found" });
+//     }
 
-    // Only pending entries allowed
-    if (entry.status !== "pending") {
-      loggerFunction("warn", `${route} - Cannot update. Status=${entry.status}`);
-      return res.status(400).json({
-        message: "Only pending entries can be edited"
+//     // Only pending entries allowed
+//     if (entry.status !== "pending") {
+//       loggerFunction("warn", `${route} - Cannot update. Status=${entry.status}`);
+//       return res.status(400).json({
+//         message: "Only pending entries can be edited"
+//       });
+//     }
+
+//     // Update only the hours field
+//     entry.hours = parsedHours;
+//     await entry.save();
+
+//     loggerFunction("info", `${route} - Hours updated successfully. id=${req.params.id} hours=${parsedHours}`);
+
+//     res.json({
+//       message: "Hours updated successfully",
+//       entry
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// Update ALL fields except image for a pending volunteer entry
+router.put(
+  "/edit-hours/:id",
+  adminAuth,
+  [
+    body("firstName").optional().notEmpty(),
+    body("lastName").optional().notEmpty(),
+    body("activityName").optional().notEmpty(),
+    body("serviceDate").optional().isISO8601(),
+    body("serviceType")
+      .optional()
+      .isIn([
+        "NEST4US Service Projects",
+        "NEST4US Community/School Events",
+        "NEST4US Food Rescues",
+        "NEST4US Community Resource Distributions",
+        "NEST Tutors",
+        "NEST4US Notes of Kindness",
+        "NEST4US Workshops",
+        "NEST4US Donations",
+        "Others"
+      ]),
+    body("hours").optional().isFloat({ min: 0.1 }),
+    body("description").optional().notEmpty(),
+    body("isHistorical").optional().isBoolean()
+  ],
+  async (req, res) => {
+    const route = "PUT /edit-hours/:id";
+
+    try {
+      loggerFunction("info", `${route} - API execution started. id=${req.params.id}`);
+      loggerFunction("debug", `${route} - Incoming body: ${JSON.stringify(req.body)}`);
+
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        loggerFunction("warn", `${route} - Validation failed`);
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const entry = await VolunteerHours.findById(req.params.id);
+
+      if (!entry) {
+        loggerFunction("warn", `${route} - Entry not found`);
+        return res.status(404).json({ message: "Hours entry not found" });
+      }
+
+      // 🔒 Only pending entries can be edited
+      if (entry.status !== "pending") {
+        loggerFunction("warn", `${route} - Cannot update. Status=${entry.status}`);
+        return res.status(400).json({
+          message: "Only pending entries can be edited"
+        });
+      }
+
+      // // ❌ Prevent image update explicitly
+      // if (req.body.proofOfService) {
+      //   return res.status(400).json({
+      //     message: "Updating proofOfService image is not allowed"
+      //   });
+      // }
+
+      const { firstName, lastName, activityName, serviceDate, serviceType, hours, description, isHistorical } =
+        req.body;
+
+      // ✅ Update only provided fields
+      if (firstName !== undefined) entry.firstName = firstName;
+      if (lastName !== undefined) entry.lastName = lastName;
+      if (activityName !== undefined) entry.activityName = activityName;
+      if (serviceDate !== undefined) entry.serviceDate = new Date(serviceDate);
+      if (serviceType !== undefined) entry.serviceType = serviceType;
+      if (hours !== undefined) entry.hours = parseFloat(hours);
+      if (description !== undefined) entry.description = description;
+      if (isHistorical !== undefined) entry.isHistorical = isHistorical;
+
+      await entry.save();
+
+      loggerFunction("info", `${route} - Entry updated successfully. id=${entry._id}`);
+
+      res.json({
+        message: "Volunteer entry updated successfully",
+        entry
       });
+    } catch (error) {
+      loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
-
-    // Update only the hours field
-    entry.hours = parsedHours;
-    await entry.save();
-
-    loggerFunction("info", `${route} - Hours updated successfully. id=${req.params.id} hours=${parsedHours}`);
-
-    res.json({
-      message: "Hours updated successfully",
-      entry
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
   }
-});
+);
 
 // Approve or reject hours
 // router.put("/review-hours/:id", adminAuth, async (req, res) => {
@@ -270,6 +359,10 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     if (volunteer && volunteer.email) {
       // helper for formatting
       const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+      const firstName = volunteer.profile?.firstName || "";
+      const lastName = volunteer.profile?.lastName || "";
+
+      const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
 
       const entryInfoHtml = `
     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
@@ -284,7 +377,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // ----------------------------------------------------
       if (status === "approved") {
         const approvalHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
       ${entryInfoHtml}
       <p>Thank you for contributing your time and effort!</p>
@@ -312,7 +405,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // ----------------------------------------------------
       if (status === "rejected") {
         const rejectionHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
       ${entryInfoHtml}
       <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
@@ -346,7 +439,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
         } else {
           const tierHtml = `
-      <p>Hi ${volunteer.profile?.fullName || "Volunteer"},</p>
+      <p>Hi ${displayName},</p>
       <p><strong>🎉 Congratulations!</strong></p>
       <p>${tierInfo.message}</p>
       <br/>
@@ -768,15 +861,15 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
     // ✅ CASE 2: Report for specific volunteer
     if (type === "volunteer") {
       const volunteerRecords = await VolunteerHours.find(match)
-        // .populate("volunteerId", "firstName lastName")
-        .populate("volunteerId", "fullName")
+        .populate("volunteerId", "firstName lastName")
+        // .populate("volunteerId", "fullName")
         .sort({ serviceDate: -1 })
         .select("activityName serviceType serviceDate hours")
         .lean();
 
       const data = volunteerRecords.map(r => ({
-        // volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
-        volunteerName: `${r.volunteerId.fullName}`,
+        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+        // volunteerName: `${r.volunteerId.fullName}`,
         serviceType: r.serviceType,
         serviceActivity: r.activityName,
         dateOfService: r.serviceDate,
@@ -1017,19 +1110,37 @@ router.post("/tiers", adminAuth, async (req, res) => {
       return res.status(400).json({ message: "Invalid tier name" });
     }
 
-    // 1️⃣ Fetch users whose saved tier matches
+    // ✅ Pagination params
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
+
+    // 1️⃣ Count users for pagination
+    const totalUsers = await User.countDocuments({ tier: tier.name });
+
+    if (totalUsers === 0) {
+      return res.status(200).json({
+        message: "No users in this tier",
+        page,
+        totalUsers: 0,
+        totalPages: 0,
+        data: []
+      });
+    }
+
+    // 2️⃣ Fetch paginated users
     const users = await User.find(
       { tier: tier.name },
       {
         _id: 1,
         email: 1,
-        "profile.fullName": 1
+        "profile.firstName": 1,
+        "profile.lastName": 1
       }
-    );
-
-    if (users.length === 0) {
-      return res.status(200).json({ message: "No users in this tier", data: [] });
-    }
+    )
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     const userIds = users.map(u => u._id);
 
@@ -1055,7 +1166,9 @@ router.post("/tiers", adminAuth, async (req, res) => {
       .map(u => ({
         userId: u._id,
         email: u.email,
-        fullName: u.profile.fullName || "",
+        // fullName: u.profile.fullName || "",
+        firstName: u.profile.firstName || "",
+        lastName: u.profile.lastName || "",
         totalApprovedHours: hoursMap[u._id.toString()] || 0
       }))
       // 4️⃣ Sort by approved hours DESC
@@ -1063,6 +1176,10 @@ router.post("/tiers", adminAuth, async (req, res) => {
 
     return res.status(200).json({
       message: `Users in tier '${tier.name}' fetched successfully`,
+      page,
+      limit,
+      totalUsers,
+      totalPages: Math.ceil(totalUsers / limit),
       data: result
     });
   } catch (error) {
@@ -1088,7 +1205,9 @@ router.post("/user-details", adminAuth, async (req, res) => {
 
     return res.status(200).json({
       userId: user._id,
-      fullName: user.profile?.fullName || "",
+      // fullName: user.profile?.fullName || "",
+      firstName: user.profile?.firstName || "",
+      lastName: user.profile?.lastName || "",
       lifetimeHours: user.totalHours || 0,
       dateOfBirth: user.profile?.dateOfBirth || null,
       location: {
