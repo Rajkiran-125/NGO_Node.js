@@ -949,16 +949,13 @@ router.get("/stats", adminAuth, async (req, res) => {
 router.post("/volunteer-report", adminAuth, async (req, res) => {
   const route = "POST /volunteer-report";
   try {
-    const { type, serviceType, fromDate, toDate, volunteerName } = req.body;
+    let { serviceType, fromDate, toDate, volunteerName } = req.body;
 
     const match = { status: "approved" };
 
-    // Date range filter
+    // Date range or single day
     if (fromDate && toDate) {
-      match.serviceDate = {
-        $gte: new Date(fromDate),
-        $lte: new Date(toDate)
-      };
+      match.serviceDate = { $gte: new Date(fromDate), $lte: new Date(toDate) };
     } else if (fromDate) {
       const from = new Date(fromDate);
       const to = new Date(fromDate);
@@ -966,13 +963,9 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       match.serviceDate = { $gte: from, $lte: to };
     }
 
-    // Filter by serviceType only if provided and non-empty
-    if (serviceType && serviceType.trim() !== "") {
+    // CASE 1: Service Type Summary (only serviceType provided, no volunteerName)
+    if (serviceType && serviceType.trim() !== "" && (!volunteerName || volunteerName.trim() === "")) {
       match.serviceType = serviceType;
-    }
-
-    // CASE 1: Service Type Summary
-    if (type === "serviceType") {
       const VOLUNTEER_HOURLY_RATE = 34.79;
       const summary = await VolunteerHours.aggregate([
         { $match: match },
@@ -1001,10 +994,17 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // CASE 2: Report for specific volunteer
-    if (type === "volunteer") {
-      const pipeline = [
-        { $match: match },
+    // CASE 2: Detailed volunteer report (volunteerName provided OR both volunteerName & serviceType)
+    if ((volunteerName && volunteerName.trim() !== "") || (serviceType && serviceType.trim() !== "")) {
+      const pipeline = [{ $match: match }];
+
+      // Filter by serviceType if provided
+      if (serviceType && serviceType.trim() !== "") {
+        pipeline.push({ $match: { serviceType } });
+      }
+
+      // Lookup volunteer details
+      pipeline.push(
         {
           $lookup: {
             from: "users",
@@ -1014,9 +1014,9 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
           }
         },
         { $unwind: "$volunteer" }
-      ];
+      );
 
-      // Filter by volunteer name if provided
+      // Filter by volunteerName if provided
       if (volunteerName && volunteerName.trim() !== "") {
         const words = volunteerName.trim().split(/\s+/);
         const nameConditions = words.map(word => {
@@ -1049,8 +1049,35 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // fallback
-    res.status(400).json({ message: "Invalid report type" });
+    // CASE 3: No filters provided → detailed report for all volunteers & all service types
+    const pipeline = [
+      { $match: match },
+      {
+        $lookup: {
+          from: "users",
+          localField: "volunteerId",
+          foreignField: "_id",
+          as: "volunteer"
+        }
+      },
+      { $unwind: "$volunteer" },
+      { $sort: { serviceDate: -1 } },
+      {
+        $project: {
+          volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+          serviceType: 1,
+          serviceActivity: "$activityName",
+          dateOfService: "$serviceDate",
+          totalHours: "$hours"
+        }
+      }
+    ];
+
+    const data = await VolunteerHours.aggregate(pipeline);
+    return res.status(200).json({
+      message: "Volunteer report fetched successfully",
+      data
+    });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
