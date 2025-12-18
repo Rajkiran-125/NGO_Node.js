@@ -170,7 +170,7 @@ router.post(
     body("id").notEmpty().withMessage("Entry ID required"),
     // body("fullName").notEmpty(),
     body("firstName").notEmpty(),
-    body("LastName").notEmpty(),
+    body("lastName").notEmpty(),
     body("activityName").notEmpty(),
     body("serviceDate").isISO8601(),
     body("serviceType").isIn([

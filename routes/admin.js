@@ -7,8 +7,42 @@ const loggerFunction = require("../utils/loggerFunction");
 const tierMessages = require("../config/tierMessages.json");
 const { body, validationResult } = require("express-validator");
 const sgMail = require("@sendgrid/mail");
+const fs = require("fs");
+const path = require("path");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+function renderEmailTemplate({ name, body }) {
+  const templatePath = path.join(process.cwd(), "source", "public", "emailTemplate.html");
+
+  let html = fs.readFileSync(templatePath, "utf8");
+
+  html = html.replace(/{{name}}/g, name);
+  html = html.replace(/{{body}}/g, body);
+
+  return html;
+}
+
+function getAttachment(fileName) {
+  const filePath = path.join(process.cwd(), "source", "attachments", fileName);
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Attachment file not found: ${filePath}`);
+  }
+
+  const ext = path.extname(fileName).toLowerCase();
+  let mimeType = "application/octet-stream";
+
+  if (ext === ".pdf") mimeType = "application/pdf";
+  else if (ext === ".png") mimeType = "image/png";
+
+  return {
+    content: fs.readFileSync(filePath).toString("base64"),
+    filename: fileName,
+    type: mimeType,
+    disposition: "attachment"
+  };
+}
 
 // Define tiers
 const TIERS = [
@@ -369,7 +403,6 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
     <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
-    <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
     <hr />
   `;
 
@@ -377,13 +410,15 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // 1️⃣ SEND APPROVAL EMAIL
       // ----------------------------------------------------
       if (status === "approved") {
-        const approvalHtml = `
-      <p>Hi ${displayName},</p>
-      <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
-      ${entryInfoHtml}
-      <p>Thank you for contributing your time and effort!</p>
-      <p>NEST4US Team</p>
-    `;
+        const bodyHtml = `
+          <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
+          ${entryInfoHtml}
+          <p>We truly appreciate your time and effort.</p>
+        `;
+        const approvalHtml = renderEmailTemplate({
+          name: displayName,
+          body: bodyHtml
+        });
 
         const msg1 = {
           to: volunteer.email,
@@ -405,14 +440,17 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // 2️⃣ SEND REJECTION EMAIL
       // ----------------------------------------------------
       if (status === "rejected") {
-        const rejectionHtml = `
-      <p>Hi ${displayName},</p>
-      <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
-      ${entryInfoHtml}
-      <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
-      <p>You may correct & re-submit your entry.</p>
-      <p>NEST4US Team</p>
-    `;
+        const bodyHtml = `
+          <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
+          ${entryInfoHtml}
+          <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+          <p>You may correct and re-submit your entry.</p>
+        `;
+
+        const rejectionHtml = renderEmailTemplate({
+          name: displayName,
+          body: bodyHtml
+        });
 
         const msg2 = {
           to: volunteer.email,
@@ -439,19 +477,36 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
         if (!tierInfo) {
           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
         } else {
-          const tierHtml = `
-      <p>Hi ${displayName},</p>
-      <p><strong>🎉 Congratulations!</strong></p>
-      <p>${tierInfo.message}</p>
-      <br/>
-      <p>NEST4US Team</p>
-    `;
+          const bodyHtml = `
+            <p><strong>🎉 Congratulations!</strong></p>
+            <p>${tierInfo.message}</p>
+          `;
+
+          const tierHtml = renderEmailTemplate({
+            name: displayName,
+            body: bodyHtml
+          });
+
+          // -----------------------------
+          // Attach PDF and PNG based on newTier
+          // -----------------------------
+          const pdfFileName = `NEST4US Recognition Tiers Social Media Toolkit_${newTier}.pdf`;
+          const pngFileName = `${newTier}.png`; // match your uploaded PNG file name
+
+          const attachments = [];
+          try {
+            attachments.push(getAttachment(pdfFileName));
+            attachments.push(getAttachment(pngFileName));
+          } catch (err) {
+            loggerFunction("error", `${route} - Attachment error: ${err.message}`);
+          }
 
           const msg3 = {
             to: volunteer.email,
             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
             subject: tierInfo.subject,
-            html: tierHtml
+            html: tierHtml,
+            attachments
           };
 
           try {
@@ -1530,6 +1585,38 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// GET /api/users/search?query=John Do
+router.get("/users/search", adminAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    // Split query by spaces and remove empty strings
+    const words = query.trim().split(/\s+/);
+
+    // Create search conditions for each word
+    const searchConditions = words.map(word => {
+      const regex = new RegExp(word, "i"); // case-insensitive
+      return {
+        $or: [{ "profile.firstName": regex }, { "profile.lastName": regex }]
+      };
+    });
+
+    // Find users that match all words
+    const users = await User.find({ $and: searchConditions })
+      .limit(20) // limit for performance
+      .select("email profile.firstName profile.lastName profile.profilePicture");
+
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    console.error("Error searching users:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 module.exports = router;
