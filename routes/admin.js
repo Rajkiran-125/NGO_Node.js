@@ -855,36 +855,123 @@ router.get("/stats", adminAuth, async (req, res) => {
 });
 
 // Download Dashboard data
+// router.post("/volunteer-report", adminAuth, async (req, res) => {
+//   const route = "POST /volunteer-report";
+//   try {
+//     const { type, serviceType, fromDate, toDate } = req.body;
+
+//     // base match filter
+//     const match = {
+//       status: "approved"
+//     };
+
+//     // ✅ Date range filter
+//     if (fromDate && toDate) {
+//       match.serviceDate = {
+//         $gte: new Date(fromDate),
+//         $lte: new Date(toDate)
+//       };
+//     } else if (fromDate) {
+//       // single-day support
+//       const from = new Date(fromDate);
+//       const to = new Date(fromDate);
+//       to.setHours(23, 59, 59, 999);
+//       match.serviceDate = { $gte: from, $lte: to };
+//     }
+
+//     // ✅ Filter by serviceType only if provided (non-empty string)
+//     if (serviceType && serviceType.trim() !== "") {
+//       match.serviceType = serviceType;
+//     }
+
+//     // ✅ CASE 1: Report for serviceType summary
+//     if (type === "serviceType") {
+//       const VOLUNTEER_HOURLY_RATE = 34.79;
+//       const summary = await VolunteerHours.aggregate([
+//         { $match: match },
+//         {
+//           $group: {
+//             _id: "$serviceType",
+//             totalVolunteers: { $addToSet: "$volunteerId" },
+//             totalHours: { $sum: "$hours" }
+//           }
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             serviceType: "$_id",
+//             totalVolunteers: { $size: "$totalVolunteers" },
+//             totalHours: 1,
+//             totalValue: { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }
+//           }
+//         },
+//         { $sort: { serviceType: 1 } }
+//       ]);
+
+//       return res.status(200).json({
+//         message: "Service type report fetched successfully",
+//         data: summary
+//       });
+//     }
+
+//     // ✅ CASE 2: Report for specific volunteer
+//     if (type === "volunteer") {
+//       const volunteerRecords = await VolunteerHours.find(match)
+//         .populate("volunteerId", "firstName lastName")
+//         // .populate("volunteerId", "fullName")
+//         .sort({ serviceDate: -1 })
+//         .select("activityName serviceType serviceDate hours")
+//         .lean();
+
+//       const data = volunteerRecords.map(r => ({
+//         volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+//         // volunteerName: `${r.volunteerId.fullName}`,
+//         serviceType: r.serviceType,
+//         serviceActivity: r.activityName,
+//         dateOfService: r.serviceDate,
+//         totalHours: r.hours
+//       }));
+
+//       return res.status(200).json({
+//         message: "Volunteer report fetched successfully",
+//         data
+//       });
+//     }
+
+//     // default fallback
+//     res.status(400).json({ message: "Invalid report type" });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+// Download Dashboard data
 router.post("/volunteer-report", adminAuth, async (req, res) => {
   const route = "POST /volunteer-report";
   try {
-    const { type, serviceType, fromDate, toDate, volunteerId } = req.body;
+    const { type, serviceType, fromDate, toDate, volunteerName } = req.body;
 
-    // base match filter
-    const match = {
-      status: "approved"
-    };
+    const match = { status: "approved" };
 
-    // ✅ Date range filter
+    // Date range filter
     if (fromDate && toDate) {
       match.serviceDate = {
         $gte: new Date(fromDate),
         $lte: new Date(toDate)
       };
     } else if (fromDate) {
-      // single-day support
       const from = new Date(fromDate);
       const to = new Date(fromDate);
       to.setHours(23, 59, 59, 999);
       match.serviceDate = { $gte: from, $lte: to };
     }
 
-    // ✅ Filter by serviceType only if provided (non-empty string)
+    // Filter by serviceType only if provided and non-empty
     if (serviceType && serviceType.trim() !== "") {
       match.serviceType = serviceType;
     }
 
-    // ✅ CASE 1: Report for serviceType summary
+    // CASE 1: Service Type Summary
     if (type === "serviceType") {
       const VOLUNTEER_HOURLY_RATE = 34.79;
       const summary = await VolunteerHours.aggregate([
@@ -914,23 +1001,47 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // ✅ CASE 2: Report for specific volunteer
+    // CASE 2: Report for specific volunteer
     if (type === "volunteer") {
-      const volunteerRecords = await VolunteerHours.find(match)
-        .populate("volunteerId", "firstName lastName")
-        // .populate("volunteerId", "fullName")
-        .sort({ serviceDate: -1 })
-        .select("activityName serviceType serviceDate hours")
-        .lean();
+      const pipeline = [
+        { $match: match },
+        {
+          $lookup: {
+            from: "users",
+            localField: "volunteerId",
+            foreignField: "_id",
+            as: "volunteer"
+          }
+        },
+        { $unwind: "$volunteer" }
+      ];
 
-      const data = volunteerRecords.map(r => ({
-        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
-        // volunteerName: `${r.volunteerId.fullName}`,
-        serviceType: r.serviceType,
-        serviceActivity: r.activityName,
-        dateOfService: r.serviceDate,
-        totalHours: r.hours
-      }));
+      // Filter by volunteer name if provided
+      if (volunteerName && volunteerName.trim() !== "") {
+        const words = volunteerName.trim().split(/\s+/);
+        const nameConditions = words.map(word => {
+          const regex = new RegExp(word, "i");
+          return {
+            $or: [{ "volunteer.firstName": regex }, { "volunteer.lastName": regex }]
+          };
+        });
+        pipeline.push({ $match: { $and: nameConditions } });
+      }
+
+      pipeline.push(
+        { $sort: { serviceDate: -1 } },
+        {
+          $project: {
+            volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+            serviceType: 1,
+            serviceActivity: "$activityName",
+            dateOfService: "$serviceDate",
+            totalHours: "$hours"
+          }
+        }
+      );
+
+      const data = await VolunteerHours.aggregate(pipeline);
 
       return res.status(200).json({
         message: "Volunteer report fetched successfully",
@@ -938,7 +1049,7 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // default fallback
+    // fallback
     res.status(400).json({ message: "Invalid report type" });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
