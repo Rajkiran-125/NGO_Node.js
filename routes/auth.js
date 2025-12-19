@@ -719,7 +719,7 @@ router.get("/google/callback", async (req, res) => {
     const appToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     // 5️⃣ Redirect to frontend with JWT
-    res.redirect(`http://localhost:4200/login-success?token=${appToken}`);
+    res.redirect(`http://localhost:4200/login?token=${appToken}`);
   } catch (error) {
     console.error("Google OAuth Error:", error.response?.data || error);
     res.status(500).send("Authentication failed");
