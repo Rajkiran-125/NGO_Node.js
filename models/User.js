@@ -99,7 +99,8 @@ const userSchema = new mongoose.Schema({
 
 // 🔐 Hash password only if local user
 userSchema.pre("save", async function (next) {
-  if (this.provider === "google") return next(); // skip hashing
+  // if (this.provider === "google") return next(); // skip hashing
+  if (!this.password) return next();
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();

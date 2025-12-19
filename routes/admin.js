@@ -13,18 +13,18 @@ const path = require("path");
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 function renderEmailTemplate({ name, body }) {
-  const templatePath = path.join(process.cwd(), "source", "public", "emailTemplate.html");
+  const templatePath = path.join(process.cwd(), "public", "emailTemplate.html");
 
   let html = fs.readFileSync(templatePath, "utf8");
 
   html = html.replace(/{{name}}/g, name);
-  html = html.replace(/{{body}}/g, body);
+  html = html.replace(/{{bodyText}}/g, body);
 
   return html;
 }
 
 function getAttachment(fileName) {
-  const filePath = path.join(process.cwd(), "source", "attachments", fileName);
+  const filePath = path.join(process.cwd(), "attachments", fileName);
 
   if (!fs.existsSync(filePath)) {
     throw new Error(`Attachment file not found: ${filePath}`);
