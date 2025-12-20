@@ -10,6 +10,7 @@ const loggerFunction = require("../utils/loggerFunction");
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const sgMail = require("@sendgrid/mail");
+const axios = require("axios");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -658,7 +659,7 @@ router.post("/reset-password", async (req, res) => {
 // Google OAuth config
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = "https://vmsbackend-eudv.onrender.com/api/auth/google/callback";
+const REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
 
 // 1️⃣ Generate Google login URL
 router.get("/google", (req, res) => {
@@ -718,7 +719,7 @@ router.get("/google/callback", async (req, res) => {
     const appToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     // 5️⃣ Redirect to frontend with JWT
-    res.redirect(`http://localhost:3000/login-success?token=${appToken}`);
+    res.redirect(`http://localhost:4200/login?token=${appToken}`);
   } catch (error) {
     console.error("Google OAuth Error:", error.response?.data || error);
     res.status(500).send("Authentication failed");

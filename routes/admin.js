@@ -7,8 +7,42 @@ const loggerFunction = require("../utils/loggerFunction");
 const tierMessages = require("../config/tierMessages.json");
 const { body, validationResult } = require("express-validator");
 const sgMail = require("@sendgrid/mail");
+const fs = require("fs");
+const path = require("path");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+function renderEmailTemplate({ name, body }) {
+  const templatePath = path.join(process.cwd(), "public", "emailTemplate.html");
+
+  let html = fs.readFileSync(templatePath, "utf8");
+
+  html = html.replace(/{{name}}/g, name);
+  html = html.replace(/{{bodyText}}/g, body);
+
+  return html;
+}
+
+function getAttachment(fileName) {
+  const filePath = path.join(process.cwd(), "attachments", fileName);
+
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Attachment file not found: ${filePath}`);
+  }
+
+  const ext = path.extname(fileName).toLowerCase();
+  let mimeType = "application/octet-stream";
+
+  if (ext === ".pdf") mimeType = "application/pdf";
+  else if (ext === ".png") mimeType = "image/png";
+
+  return {
+    content: fs.readFileSync(filePath).toString("base64"),
+    filename: fileName,
+    type: mimeType,
+    disposition: "attachment"
+  };
+}
 
 // Define tiers
 const TIERS = [
@@ -369,7 +403,6 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
     <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
-    <p><strong>Submission ID:</strong> ${hoursEntry._id}</p>
     <hr />
   `;
 
@@ -377,13 +410,15 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // 1️⃣ SEND APPROVAL EMAIL
       // ----------------------------------------------------
       if (status === "approved") {
-        const approvalHtml = `
-      <p>Hi ${displayName},</p>
-      <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
-      ${entryInfoHtml}
-      <p>Thank you for contributing your time and effort!</p>
-      <p>NEST4US Team</p>
-    `;
+        const bodyHtml = `
+          <p>Your volunteer hours submission has been <strong>approved</strong>.</p>
+          ${entryInfoHtml}
+          <p>We truly appreciate your time and effort.</p>
+        `;
+        const approvalHtml = renderEmailTemplate({
+          name: displayName,
+          body: bodyHtml
+        });
 
         const msg1 = {
           to: volunteer.email,
@@ -405,14 +440,17 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
       // 2️⃣ SEND REJECTION EMAIL
       // ----------------------------------------------------
       if (status === "rejected") {
-        const rejectionHtml = `
-      <p>Hi ${displayName},</p>
-      <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
-      ${entryInfoHtml}
-      <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
-      <p>You may correct & re-submit your entry.</p>
-      <p>NEST4US Team</p>
-    `;
+        const bodyHtml = `
+          <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
+          ${entryInfoHtml}
+          <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+          <p>You may correct and re-submit your entry.</p>
+        `;
+
+        const rejectionHtml = renderEmailTemplate({
+          name: displayName,
+          body: bodyHtml
+        });
 
         const msg2 = {
           to: volunteer.email,
@@ -439,19 +477,36 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
         if (!tierInfo) {
           loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
         } else {
-          const tierHtml = `
-      <p>Hi ${displayName},</p>
-      <p><strong>🎉 Congratulations!</strong></p>
-      <p>${tierInfo.message}</p>
-      <br/>
-      <p>NEST4US Team</p>
-    `;
+          const bodyHtml = `
+            <p><strong>🎉 Congratulations!</strong></p>
+            <p>${tierInfo.message}</p>
+          `;
+
+          const tierHtml = renderEmailTemplate({
+            name: displayName,
+            body: bodyHtml
+          });
+
+          // -----------------------------
+          // Attach PDF and PNG based on newTier
+          // -----------------------------
+          const pdfFileName = `NEST4US Recognition Tiers Social Media Toolkit_${newTier}.pdf`;
+          const pngFileName = `${newTier}.png`; // match your uploaded PNG file name
+
+          const attachments = [];
+          try {
+            attachments.push(getAttachment(pdfFileName));
+            attachments.push(getAttachment(pngFileName));
+          } catch (err) {
+            loggerFunction("error", `${route} - Attachment error: ${err.message}`);
+          }
 
           const msg3 = {
             to: volunteer.email,
             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
             subject: tierInfo.subject,
-            html: tierHtml
+            html: tierHtml,
+            attachments
           };
 
           try {
@@ -800,37 +855,117 @@ router.get("/stats", adminAuth, async (req, res) => {
 });
 
 // Download Dashboard data
+// router.post("/volunteer-report", adminAuth, async (req, res) => {
+//   const route = "POST /volunteer-report";
+//   try {
+//     const { type, serviceType, fromDate, toDate } = req.body;
+
+//     // base match filter
+//     const match = {
+//       status: "approved"
+//     };
+
+//     // ✅ Date range filter
+//     if (fromDate && toDate) {
+//       match.serviceDate = {
+//         $gte: new Date(fromDate),
+//         $lte: new Date(toDate)
+//       };
+//     } else if (fromDate) {
+//       // single-day support
+//       const from = new Date(fromDate);
+//       const to = new Date(fromDate);
+//       to.setHours(23, 59, 59, 999);
+//       match.serviceDate = { $gte: from, $lte: to };
+//     }
+
+//     // ✅ Filter by serviceType only if provided (non-empty string)
+//     if (serviceType && serviceType.trim() !== "") {
+//       match.serviceType = serviceType;
+//     }
+
+//     // ✅ CASE 1: Report for serviceType summary
+//     if (type === "serviceType") {
+//       const VOLUNTEER_HOURLY_RATE = 34.79;
+//       const summary = await VolunteerHours.aggregate([
+//         { $match: match },
+//         {
+//           $group: {
+//             _id: "$serviceType",
+//             totalVolunteers: { $addToSet: "$volunteerId" },
+//             totalHours: { $sum: "$hours" }
+//           }
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             serviceType: "$_id",
+//             totalVolunteers: { $size: "$totalVolunteers" },
+//             totalHours: 1,
+//             totalValue: { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }
+//           }
+//         },
+//         { $sort: { serviceType: 1 } }
+//       ]);
+
+//       return res.status(200).json({
+//         message: "Service type report fetched successfully",
+//         data: summary
+//       });
+//     }
+
+//     // ✅ CASE 2: Report for specific volunteer
+//     if (type === "volunteer") {
+//       const volunteerRecords = await VolunteerHours.find(match)
+//         .populate("volunteerId", "firstName lastName")
+//         // .populate("volunteerId", "fullName")
+//         .sort({ serviceDate: -1 })
+//         .select("activityName serviceType serviceDate hours")
+//         .lean();
+
+//       const data = volunteerRecords.map(r => ({
+//         volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
+//         // volunteerName: `${r.volunteerId.fullName}`,
+//         serviceType: r.serviceType,
+//         serviceActivity: r.activityName,
+//         dateOfService: r.serviceDate,
+//         totalHours: r.hours
+//       }));
+
+//       return res.status(200).json({
+//         message: "Volunteer report fetched successfully",
+//         data
+//       });
+//     }
+
+//     // default fallback
+//     res.status(400).json({ message: "Invalid report type" });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+// Download Dashboard data
 router.post("/volunteer-report", adminAuth, async (req, res) => {
   const route = "POST /volunteer-report";
   try {
-    const { type, serviceType, fromDate, toDate, volunteerId } = req.body;
+    let { serviceType, fromDate, toDate, volunteerName } = req.body;
 
-    // base match filter
-    const match = {
-      status: "approved"
-    };
+    const match = { status: "approved" };
 
-    // ✅ Date range filter
+    // Date range or single day
     if (fromDate && toDate) {
-      match.serviceDate = {
-        $gte: new Date(fromDate),
-        $lte: new Date(toDate)
-      };
+      match.serviceDate = { $gte: new Date(fromDate), $lte: new Date(toDate) };
     } else if (fromDate) {
-      // single-day support
       const from = new Date(fromDate);
       const to = new Date(fromDate);
       to.setHours(23, 59, 59, 999);
       match.serviceDate = { $gte: from, $lte: to };
     }
 
-    // ✅ Filter by serviceType only if provided (non-empty string)
-    if (serviceType && serviceType.trim() !== "") {
+    // CASE 1: Service Type Summary (only serviceType provided, no volunteerName)
+    if (serviceType && serviceType.trim() !== "" && (!volunteerName || volunteerName.trim() === "")) {
       match.serviceType = serviceType;
-    }
-
-    // ✅ CASE 1: Report for serviceType summary
-    if (type === "serviceType") {
       const VOLUNTEER_HOURLY_RATE = 34.79;
       const summary = await VolunteerHours.aggregate([
         { $match: match },
@@ -859,23 +994,54 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // ✅ CASE 2: Report for specific volunteer
-    if (type === "volunteer") {
-      const volunteerRecords = await VolunteerHours.find(match)
-        .populate("volunteerId", "firstName lastName")
-        // .populate("volunteerId", "fullName")
-        .sort({ serviceDate: -1 })
-        .select("activityName serviceType serviceDate hours")
-        .lean();
+    // CASE 2: Detailed volunteer report (volunteerName provided OR both volunteerName & serviceType)
+    if ((volunteerName && volunteerName.trim() !== "") || (serviceType && serviceType.trim() !== "")) {
+      const pipeline = [{ $match: match }];
 
-      const data = volunteerRecords.map(r => ({
-        volunteerName: `${r.volunteerId.firstName} ${r.volunteerId.lastName}`,
-        // volunteerName: `${r.volunteerId.fullName}`,
-        serviceType: r.serviceType,
-        serviceActivity: r.activityName,
-        dateOfService: r.serviceDate,
-        totalHours: r.hours
-      }));
+      // Filter by serviceType if provided
+      if (serviceType && serviceType.trim() !== "") {
+        pipeline.push({ $match: { serviceType } });
+      }
+
+      // Lookup volunteer details
+      pipeline.push(
+        {
+          $lookup: {
+            from: "users",
+            localField: "volunteerId",
+            foreignField: "_id",
+            as: "volunteer"
+          }
+        },
+        { $unwind: "$volunteer" }
+      );
+
+      // Filter by volunteerName if provided
+      if (volunteerName && volunteerName.trim() !== "") {
+        const words = volunteerName.trim().split(/\s+/);
+        const nameConditions = words.map(word => {
+          const regex = new RegExp(word, "i");
+          return {
+            $or: [{ "volunteer.firstName": regex }, { "volunteer.lastName": regex }]
+          };
+        });
+        pipeline.push({ $match: { $and: nameConditions } });
+      }
+
+      pipeline.push(
+        { $sort: { serviceDate: -1 } },
+        {
+          $project: {
+            volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+            serviceType: 1,
+            serviceActivity: "$activityName",
+            dateOfService: "$serviceDate",
+            totalHours: "$hours"
+          }
+        }
+      );
+
+      const data = await VolunteerHours.aggregate(pipeline);
 
       return res.status(200).json({
         message: "Volunteer report fetched successfully",
@@ -883,8 +1049,35 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // default fallback
-    res.status(400).json({ message: "Invalid report type" });
+    // CASE 3: No filters provided → detailed report for all volunteers & all service types
+    const pipeline = [
+      { $match: match },
+      {
+        $lookup: {
+          from: "users",
+          localField: "volunteerId",
+          foreignField: "_id",
+          as: "volunteer"
+        }
+      },
+      { $unwind: "$volunteer" },
+      { $sort: { serviceDate: -1 } },
+      {
+        $project: {
+          volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+          serviceType: 1,
+          serviceActivity: "$activityName",
+          dateOfService: "$serviceDate",
+          totalHours: "$hours"
+        }
+      }
+    ];
+
+    const data = await VolunteerHours.aggregate(pipeline);
+    return res.status(200).json({
+      message: "Volunteer report fetched successfully",
+      data
+    });
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
@@ -1530,6 +1723,38 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+// GET /api/users/search?query=John Do
+router.get("/users/search", adminAuth, async (req, res) => {
+  try {
+    const { query } = req.query;
+
+    if (!query || query.trim() === "") {
+      return res.status(400).json({ message: "Query parameter is required" });
+    }
+
+    // Split query by spaces and remove empty strings
+    const words = query.trim().split(/\s+/);
+
+    // Create search conditions for each word
+    const searchConditions = words.map(word => {
+      const regex = new RegExp(word, "i"); // case-insensitive
+      return {
+        $or: [{ "profile.firstName": regex }, { "profile.lastName": regex }]
+      };
+    });
+
+    // Find users that match all words
+    const users = await User.find({ $and: searchConditions })
+      .limit(20) // limit for performance
+      .select("email profile.firstName profile.lastName profile.profilePicture");
+
+    res.status(200).json({ success: true, users });
+  } catch (err) {
+    console.error("Error searching users:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 module.exports = router;
