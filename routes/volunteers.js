@@ -269,10 +269,10 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     // ----------------------------
     // 1️⃣ Handle profile picture
     // ----------------------------
-    // if (req.file) {
-    const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
-    updateData["profile.profilePicture"] = filePath;
-    // }
+    if (req.file) {
+      const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
+      updateData["profile.profilePicture"] = filePath;
+    }
 
     // ----------------------------
     // 2️⃣ Normal profile fields
