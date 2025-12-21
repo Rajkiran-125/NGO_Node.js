@@ -659,7 +659,8 @@ router.post("/reset-password", async (req, res) => {
 // Google OAuth config
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
+// const REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
+const REDIRECT_URI = "https://ngo-node-js.onrender.com/api/auth/google/callback";
 
 // 1️⃣ Generate Google login URL
 router.get("/google", (req, res) => {
