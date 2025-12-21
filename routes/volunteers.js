@@ -241,9 +241,9 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
 
     let updateData = {};
 
-    if (!req.file) {
-      return res.status(400).json({ message: "Profile picture is required" });
-    }
+    // if (!req.file) {
+    //   return res.status(400).json({ message: "Profile picture is required" });
+    // }
 
     const requiredFields = {
       // fullName,
