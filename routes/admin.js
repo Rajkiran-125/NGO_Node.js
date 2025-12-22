@@ -1615,10 +1615,10 @@ router.post("/user-details", adminAuth, async (req, res) => {
         state: user.profile?.location?.state || "",
         country: user.profile?.location?.country || ""
       },
-      schoolOrganization: "", // ❗ you removed it, returning empty
+      schoolOrganization: user.profile?.schoolOrganization || "",
       phoneNumber: user.profile?.phoneNumber || "",
       email: user.email,
-      causes: [], // ❗ keep empty for now as requested
+      causesOfInterest: user?.causesOfInterest || "",
       profilePicture: user.profile?.profilePicture || ""
     });
   } catch (error) {
