@@ -1618,7 +1618,7 @@ router.post("/user-details", adminAuth, async (req, res) => {
       schoolOrganization: user.profile?.schoolOrganization || "",
       phoneNumber: user.profile?.phoneNumber || "",
       email: user.email,
-      causesOfInterest: user?.causesOfInterest || "",
+      causesOfInterest: (user.profile?.causesOfInterest || []).join(", "),
       profilePicture: user.profile?.profilePicture || ""
     });
   } catch (error) {
