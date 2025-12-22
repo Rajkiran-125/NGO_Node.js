@@ -53,18 +53,66 @@ const TIERS = [
 ];
 
 // Get pending hours for approval
-router.get("/pending-hours", adminAuth, async (req, res) => {
-  const route = "GET /pending-hours";
+// router.get("/pending-hours", adminAuth, async (req, res) => {
+//   const route = "GET /pending-hours";
+//   try {
+//     loggerFunction("info", `${route} - API execution started.`);
+//     const pendingHours = await VolunteerHours.find({ status: "pending" })
+//       // .populate("volunteerId", "profile.firstName profile.lastName email")
+//       .populate("volunteerId", "profile.firstName profile.lastName email")
+//       .sort({ submittedAt: -1 });
+
+//     // loggerFunction("debug", `${route} - Response : ${pendingHours}`);
+//     loggerFunction("debug", `${route} - Sample Record: ${JSON.stringify(pendingHours[0] || {}, null, 2)}`);
+//     res.json(pendingHours);
+//     loggerFunction("info", `${route} - Response sent successfully.`);
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
+// Get pending hours for approval (with optional date filter)
+router.post("/pending-hours", adminAuth, async (req, res) => {
+  const route = "POST /pending-hours";
   try {
     loggerFunction("info", `${route} - API execution started.`);
-    const pendingHours = await VolunteerHours.find({ status: "pending" })
-      // .populate("volunteerId", "profile.firstName profile.lastName email")
+
+    const { fromDate, toDate } = req.body;
+
+    // Base filter
+    const query = { status: "pending" };
+
+    // ----------------------------
+    // Optional date filtering
+    // ----------------------------
+    if (fromDate || toDate) {
+      query.serviceDate = {};
+
+      if (fromDate) {
+        query.serviceDate.$gte = new Date(fromDate);
+      }
+
+      if (toDate) {
+        // include entire end day
+        const end = new Date(toDate);
+        end.setHours(23, 59, 59, 999);
+        query.serviceDate.$lte = end;
+      }
+    }
+
+    const pendingHours = await VolunteerHours.find(query)
       .populate("volunteerId", "profile.firstName profile.lastName email")
       .sort({ submittedAt: -1 });
 
-    // loggerFunction("debug", `${route} - Response : ${pendingHours}`);
     loggerFunction("debug", `${route} - Sample Record: ${JSON.stringify(pendingHours[0] || {}, null, 2)}`);
-    res.json(pendingHours);
+
+    res.json({
+      success: true,
+      count: pendingHours.length,
+      data: pendingHours
+    });
+
     loggerFunction("info", `${route} - Response sent successfully.`);
   } catch (error) {
     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);

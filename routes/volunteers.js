@@ -253,7 +253,8 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
       dateOfBirth,
       phoneNumber,
       state,
-      country
+      country,
+      causesOfInterest
     };
 
     for (const [key, value] of Object.entries(requiredFields)) {
@@ -286,6 +287,8 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     if (dateOfBirth !== undefined) updateData["profile.dateOfBirth"] = dateOfBirth;
 
     if (phoneNumber !== undefined) updateData["profile.phoneNumber"] = phoneNumber;
+
+    if (causesOfInterest !== undefined) updateData["profile.causesOfInterest"] = causesOfInterest;
 
     // ----------------------------
     // 3️⃣ Location (state / country)
