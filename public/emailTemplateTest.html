@@ -23,44 +23,55 @@
 
       .header {
         background: #5a0f8d;
-        padding: 60px 20px 40px;
+        padding: 40px 20px 60px;
         text-align: center;
         position: relative;
       }
 
       .logo-wrapper {
-        margin: 0 auto 15px;
         width: 70px;
         height: 70px;
+        /*background: #ffffff;*/
+        /*border-radius: 50%;*/
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        position: absolute;
+        left: 50%;
+        bottom: 15px;
+        transform: translateX(-50%);
+        /*box-shadow: 0px 3px 6px rgba(0,0,0,0.15);*/
       }
 
       .logo-wrapper img {
-        width: 70px;
-        height: 70px;
-        display: block;
-        margin: 0 auto;
+        width: 60px;
+        height: 60px;
       }
 
       .content {
-        padding: 40px 30px 20px;
+        padding: 60px 30px 40px;
         font-size: 15px;
         color: #333;
         line-height: 1.6;
-        text-align: center;
       }
 
-      .website-link {
-        margin-top: 10px;
-        display: block;
-        font-size: 14px;
-        color: #5a0f8d;
+      .button {
+        display: inline-block;
+        background: #5a0f8d;
+        padding: 10px 24px;
         text-decoration: none;
+        color: #000;
+        border-radius: 6px;
+        font-weight: 600;
+        margin: 15px 0 25px;
+        color: #fff;
       }
 
       /* SOCIAL FOOTER */
       .social-footer {
         background: #5a0f8d;
-        padding: 20px 10px;
+        padding: 1px 10px 15px 5px;
         text-align: center;
         color: #fff;
       }
@@ -68,7 +79,7 @@
       .social-footer h3 {
         font-size: 15px;
         letter-spacing: 1px;
-        margin-bottom: 15px;
+        margin-bottom: 18px;
         color: #fff;
       }
 
@@ -76,30 +87,21 @@
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 18px;
       }
 
       .social-icon {
         width: 42px;
         height: 42px;
+        background: #ffffff;
         border-radius: 50%;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: #fff;
       }
 
       .social-icon img {
         width: 22px;
-        height: 22px;
-      }
-
-      .social-icon a {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
       }
     </style>
   </head>
@@ -108,9 +110,7 @@
     <div class="email-container">
       <div class="header">
         <div class="logo-wrapper">
-          <a href="https://www.nest4us.org" target="_blank">
-            <img src="https://ngo-node-js.onrender.com/uploads/logo/logo.png" alt="Nest4Us Logo" />
-          </a>
+          <img src="https://ngo-node-js.onrender.com/uploads/logo/logo.png" alt="Nest4Us Logo" />
         </div>
       </div>
 
@@ -122,8 +122,6 @@
         <p>Thank you!</p>
 
         <p><strong>NEST4US Team</strong></p>
-
-        <a href="https://www.nest4us.org" target="_blank" class="website-link"> www.nest4us.org </a>
       </div>
 
       <div class="social-footer">

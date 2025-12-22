@@ -55,7 +55,7 @@ router.post(
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Others"
+      "Other"
     ]),
     body("hours").isFloat({ min: 0.1 }),
     body("description").notEmpty()
@@ -182,7 +182,7 @@ router.post(
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Others"
+      "Other"
     ]),
     body("hours").isFloat({ min: 0.1 }),
     body("description").notEmpty()

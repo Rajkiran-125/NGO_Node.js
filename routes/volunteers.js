@@ -568,7 +568,7 @@ router.get("/service-types", (req, res) => {
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Others"
+      "Other"
     ];
 
     res.status(200).json({

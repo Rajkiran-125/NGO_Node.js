@@ -9,19 +9,9 @@ const { body, validationResult } = require("express-validator");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const path = require("path");
+const { renderEmailTemplate } = require("../utils/renderEmailTemplate");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-function renderEmailTemplate({ name, body }) {
-  const templatePath = path.join(process.cwd(), "public", "emailTemplate.html");
-
-  let html = fs.readFileSync(templatePath, "utf8");
-
-  html = html.replace(/{{name}}/g, name);
-  html = html.replace(/{{bodyText}}/g, body);
-
-  return html;
-}
 
 function getAttachment(fileName) {
   const filePath = path.join(process.cwd(), "attachments", fileName);
@@ -194,7 +184,7 @@ router.put(
         "NEST4US Notes of Kindness",
         "NEST4US Workshops",
         "NEST4US Donations",
-        "Others"
+        "Other"
       ]),
     body("hours").optional().isFloat({ min: 0.1 }),
     body("description").optional().notEmpty(),
@@ -1732,7 +1722,7 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
       "NEST4US Notes of Kindness": "Notes of Kindness",
       "NEST4US Workshops": "Workshops",
       "NEST4US Donations": "Donations",
-      Others: "Other"
+      Other: "Other"
     };
 
     // Define the desired order
@@ -1864,7 +1854,7 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
       "NEST4US Notes of Kindness": "Notes of Kindness",
       "NEST4US Workshops": "Workshops",
       "NEST4US Donations": "Donations",
-      Others: "Other"
+      Other: "Other"
     };
 
     const categoryOrder = [

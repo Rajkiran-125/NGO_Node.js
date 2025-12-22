@@ -7,10 +7,11 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
-const crypto = require("crypto");
-const nodemailer = require("nodemailer");
+// const crypto = require("crypto");
+// const nodemailer = require("nodemailer");
 const sgMail = require("@sendgrid/mail");
 const axios = require("axios");
+const { renderEmailTemplate } = require("../utils/renderEmailTemplate");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -585,21 +586,26 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
     const lastName = user.profile?.lastName || "";
 
     const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
-
-    // Prepare the SendGrid email
-    const msg = {
-      to: user.email,
-      from: "shubhamb0012@gmail.com",
-      subject: "Your Password Reset Code",
-      html: `
-        <p>Hello ${displayName},</p>
+    const dynamicHTML = `
         <p>You requested to reset your password.</p>
         <p>Your 6-digit reset code is:</p>
         <h2 style="font-size: 28px; letter-spacing: 3px;">${resetCode}</h2>
         <p>This code will expire in <strong>1 hour</strong>.</p>
         <br/>
         <p>If you did not request this reset, ignore this email.</p>
-      `
+      `;
+
+    const finalHTML = renderEmailTemplate({
+      name: displayName,
+      body: dynamicHTML
+    });
+
+    // Prepare the SendGrid email
+    const msg = {
+      to: user.email,
+      from: "shubhamb0012@gmail.com",
+      subject: "NEST4US - Password Reset Code",
+      html: finalHTML
     };
 
     await sgMail.send(msg);

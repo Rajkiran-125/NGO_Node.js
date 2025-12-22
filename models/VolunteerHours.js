@@ -23,7 +23,7 @@ const volunteerHoursSchema = new mongoose.Schema({
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Others"
+      "Other"
     ],
     required: true
   },
