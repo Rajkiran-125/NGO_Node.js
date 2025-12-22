@@ -8,6 +8,7 @@ const router = express.Router();
 const fs = require("fs");
 const loggerFunction = require("../utils/loggerFunction");
 const tierMessages = require("../config/tierMessages.json");
+const { getEmptyProfileFields } = require("../utils/getEmptyProfileFields");
 
 // // Configure multer for file uploads
 // const storage = multer.diskStorage({
@@ -637,6 +638,32 @@ router.get("/users", async (req, res) => {
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
+router.get("/check-profile-completion", auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const emptyFields = getEmptyProfileFields(user);
+
+    return res.status(200).json({
+      redirectToUpdateProfile: emptyFields.length > 0,
+      emptyFields,
+      isProfileComplete: emptyFields.length === 0
+    });
+  } catch (error) {
+    console.error("Profile completion check error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
   }
 });
 

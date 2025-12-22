@@ -10,6 +10,7 @@ const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
 const path = require("path");
 const { renderEmailTemplate } = require("../utils/renderEmailTemplate");
+const { getEmptyProfileFields } = require("../utils/getEmptyProfileFields");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -1964,4 +1965,31 @@ router.get("/users/search", adminAuth, async (req, res) => {
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
+router.get("/check-profile-completion", adminAuth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const emptyFields = getEmptyProfileFields(user);
+
+    return res.status(200).json({
+      redirectToUpdateProfile: emptyFields.length > 0,
+      emptyFields,
+      isProfileComplete: emptyFields.length === 0
+    });
+  } catch (error) {
+    console.error("Profile completion check error:", error);
+    return res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

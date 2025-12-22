@@ -177,7 +177,8 @@ router.post("/register", upload.single("profilePicture"), async (req, res) => {
       dateOfBirth,
       phoneNumber,
       state,
-      country
+      country,
+      causesOfInterest
     };
 
     for (const [key, value] of Object.entries(requiredFields)) {
