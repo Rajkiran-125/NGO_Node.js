@@ -946,27 +946,178 @@ router.get("/stats", adminAuth, async (req, res) => {
 //   }
 // });
 // Download Dashboard data
+// router.post("/volunteer-report", async (req, res) => {
+//   const route = "POST /volunteer-report";
+//   try {
+//     let { serviceType, fromDate, toDate, volunteerName } = req.body;
+
+//     const match = { status: "approved" };
+
+//     // Date range or single day
+//     if (fromDate && toDate) {
+//       match.serviceDate = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+//     } else if (fromDate) {
+//       const from = new Date(fromDate);
+//       const to = new Date(fromDate);
+//       to.setHours(23, 59, 59, 999);
+//       match.serviceDate = { $gte: from, $lte: to };
+//     }
+
+//     // CASE 1: Service Type Summary (only serviceType provided, no volunteerName)
+//     if (serviceType && serviceType.trim() !== "" && (!volunteerName || volunteerName.trim() === "")) {
+//       match.serviceType = serviceType;
+//       const VOLUNTEER_HOURLY_RATE = 34.79;
+//       const summary = await VolunteerHours.aggregate([
+//         { $match: match },
+//         {
+//           $group: {
+//             _id: "$serviceType",
+//             totalVolunteers: { $addToSet: "$volunteerId" },
+//             totalHours: { $sum: "$hours" }
+//           }
+//         },
+//         {
+//           $project: {
+//             _id: 0,
+//             serviceType: "$_id",
+//             totalVolunteers: { $size: "$totalVolunteers" },
+//             totalHours: 1,
+//             totalValue: { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }
+//           }
+//         },
+//         { $sort: { serviceType: 1 } }
+//       ]);
+
+//       return res.status(200).json({
+//         message: "Service type report fetched successfully",
+//         data: summary
+//       });
+//     }
+
+//     // CASE 2: Detailed volunteer report (volunteerName provided OR both volunteerName & serviceType)
+//     if ((volunteerName && volunteerName.trim() !== "") || (serviceType && serviceType.trim() !== "")) {
+//       const pipeline = [{ $match: match }];
+
+//       // Filter by serviceType if provided
+//       if (serviceType && serviceType.trim() !== "") {
+//         pipeline.push({ $match: { serviceType } });
+//       }
+
+//       // Lookup volunteer details
+//       pipeline.push(
+//         {
+//           $lookup: {
+//             from: "users",
+//             localField: "volunteerId",
+//             foreignField: "_id",
+//             as: "volunteer"
+//           }
+//         },
+//         { $unwind: "$volunteer" }
+//       );
+
+//       // Filter by volunteerName if provided
+//       if (volunteerName && volunteerName.trim() !== "") {
+//         const words = volunteerName.trim().split(/\s+/);
+//         const nameConditions = words.map(word => {
+//           const regex = new RegExp(word, "i");
+//           return {
+//             $or: [{ "volunteer.firstName": regex }, { "volunteer.lastName": regex }]
+//           };
+//         });
+//         pipeline.push({ $match: { $and: nameConditions } });
+//       }
+
+//       pipeline.push(
+//         { $sort: { serviceDate: -1 } },
+//         {
+//           $project: {
+//             volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+//             serviceType: 1,
+//             serviceActivity: "$activityName",
+//             dateOfService: "$serviceDate",
+//             totalHours: "$hours"
+//           }
+//         }
+//       );
+
+//       const data = await VolunteerHours.aggregate(pipeline);
+
+//       return res.status(200).json({
+//         message: "Volunteer report fetched successfully",
+//         data
+//       });
+//     }
+
+//     // CASE 3: No filters provided → detailed report for all volunteers & all service types
+//     const pipeline = [
+//       { $match: match },
+//       {
+//         $lookup: {
+//           from: "users",
+//           localField: "volunteerId",
+//           foreignField: "_id",
+//           as: "volunteer"
+//         }
+//       },
+//       { $unwind: "$volunteer" },
+//       { $sort: { serviceDate: -1 } },
+//       {
+//         $project: {
+//           volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+//           serviceType: 1,
+//           serviceActivity: "$activityName",
+//           dateOfService: "$serviceDate",
+//           totalHours: "$hours"
+//         }
+//       }
+//     ];
+
+//     const data = await VolunteerHours.aggregate(pipeline);
+//     return res.status(200).json({
+//       message: "Volunteer report fetched successfully",
+//       data
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
+
 router.post("/volunteer-report", adminAuth, async (req, res) => {
   const route = "POST /volunteer-report";
+
   try {
     let { serviceType, fromDate, toDate, volunteerName } = req.body;
 
+    // Base match condition
     const match = { status: "approved" };
 
-    // Date range or single day
+    // ----------------------------
+    // 📅 Date filter (serviceDate)
+    // ----------------------------
     if (fromDate && toDate) {
-      match.serviceDate = { $gte: new Date(fromDate), $lte: new Date(toDate) };
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999);
+
+      match.serviceDate = { $gte: from, $lte: to };
     } else if (fromDate) {
       const from = new Date(fromDate);
       const to = new Date(fromDate);
       to.setHours(23, 59, 59, 999);
+
       match.serviceDate = { $gte: from, $lte: to };
     }
 
-    // CASE 1: Service Type Summary (only serviceType provided, no volunteerName)
-    if (serviceType && serviceType.trim() !== "" && (!volunteerName || volunteerName.trim() === "")) {
+    // ==================================================
+    // CASE 1️⃣ Service Type Summary (NO volunteerName)
+    // ==================================================
+    if (serviceType && (!volunteerName || volunteerName.trim() === "")) {
       match.serviceType = serviceType;
+
       const VOLUNTEER_HOURLY_RATE = 34.79;
+
       const summary = await VolunteerHours.aggregate([
         { $match: match },
         {
@@ -982,7 +1133,9 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
             serviceType: "$_id",
             totalVolunteers: { $size: "$totalVolunteers" },
             totalHours: 1,
-            totalValue: { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }
+            totalValue: {
+              $round: [{ $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }, 2]
+            }
           }
         },
         { $sort: { serviceType: 1 } }
@@ -994,16 +1147,19 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // CASE 2: Detailed volunteer report (volunteerName provided OR both volunteerName & serviceType)
+    // ==================================================
+    // CASE 2️⃣ Detailed Volunteer Report
+    // (volunteerName OR serviceType provided)
+    // ==================================================
     if ((volunteerName && volunteerName.trim() !== "") || (serviceType && serviceType.trim() !== "")) {
       const pipeline = [{ $match: match }];
 
-      // Filter by serviceType if provided
+      // Filter by serviceType
       if (serviceType && serviceType.trim() !== "") {
         pipeline.push({ $match: { serviceType } });
       }
 
-      // Lookup volunteer details
+      // 🔍 Lookup user details
       pipeline.push(
         {
           $lookup: {
@@ -1016,23 +1172,28 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
         { $unwind: "$volunteer" }
       );
 
-      // Filter by volunteerName if provided
+      // 🔎 Filter by volunteerName (first + last)
       if (volunteerName && volunteerName.trim() !== "") {
         const words = volunteerName.trim().split(/\s+/);
+
         const nameConditions = words.map(word => {
           const regex = new RegExp(word, "i");
           return {
-            $or: [{ "volunteer.firstName": regex }, { "volunteer.lastName": regex }]
+            $or: [{ "volunteer.profile.firstName": regex }, { "volunteer.profile.lastName": regex }]
           };
         });
+
         pipeline.push({ $match: { $and: nameConditions } });
       }
 
+      // 📤 Final projection
       pipeline.push(
         { $sort: { serviceDate: -1 } },
         {
           $project: {
-            volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+            volunteerName: {
+              $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
+            },
             serviceType: 1,
             serviceActivity: "$activityName",
             dateOfService: "$serviceDate",
@@ -1049,7 +1210,9 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       });
     }
 
-    // CASE 3: No filters provided → detailed report for all volunteers & all service types
+    // ==================================================
+    // CASE 3️⃣ No Filters → Full Detailed Report
+    // ==================================================
     const pipeline = [
       { $match: match },
       {
@@ -1064,7 +1227,9 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       { $sort: { serviceDate: -1 } },
       {
         $project: {
-          volunteerName: { $concat: ["$volunteer.firstName", " ", "$volunteer.lastName"] },
+          volunteerName: {
+            $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
+          },
           serviceType: 1,
           serviceActivity: "$activityName",
           dateOfService: "$serviceDate",
@@ -1074,13 +1239,17 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
     ];
 
     const data = await VolunteerHours.aggregate(pipeline);
+
     return res.status(200).json({
       message: "Volunteer report fetched successfully",
       data
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
+    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    res.status(500).json({
+      message: "Server error",
+      error: error.message
+    });
   }
 });
 
