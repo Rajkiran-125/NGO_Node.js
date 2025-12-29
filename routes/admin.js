@@ -1400,6 +1400,7 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
         { $sort: { serviceDate: -1 } },
         {
           $project: {
+            _id: 0,
             "Volunteer Name": {
               $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
             },
@@ -1437,6 +1438,7 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       { $sort: { serviceDate: -1 } },
       {
         $project: {
+          _id: 0,
           "Volunteer Name": {
             $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
           },
