@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  vms_node_app:
+    build: .
+    container_name: vms_node_app
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    depends_on:
+      - vms_mongodb
+    restart: always
+
+  vms_mongodb:
+    image: mongo:7
+    container_name: vms_mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: always
+
+volumes:
+  mongo_data:

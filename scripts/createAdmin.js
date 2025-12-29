@@ -3,9 +3,10 @@ const User = require("../models/User");
 
 const createAdmin = async () => {
   try {
-    await mongoose.connect(
-      "mongodb+srv://nest4us_user:Zvgi0EmOSKdEY6DD@cluster0.nxavpeg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-    );
+    // await mongoose.connect(
+    //   "mongodb+srv://nest4us_user:Zvgi0EmOSKdEY6DD@cluster0.nxavpeg.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    // );
+    await mongoose.connect(process.env.MONGO_URI);
 
     const adminExists = await User.findOne({ role: "admin" });
     if (adminExists) {
