@@ -46,101 +46,6 @@ const upload = multer({
   }
 });
 
-// Register
-// router.post(
-//   "/register",
-//   // [
-//   //   body("email").isEmail(),
-//   //   body("password").isLength({ min: 6 }),
-//   //   body("firstName").notEmpty(),
-//   //   body("lastName").notEmpty(),
-//   //   body("schoolOrganization").notEmpty(),
-//   //   body("dateOfBirth").isISO8601(),
-//   //   body("phoneNumber").notEmpty(),
-//   // ],
-//   async (req, res) => {
-//     const route = "POST /register";
-//     try {
-//       loggerFunction("info", `${route} - API execution started.`);
-//       loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
-//       const errors = validationResult(req);
-//       if (!errors.isEmpty()) {
-//         loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
-//         return res.status(400).json({ errors: errors.array() });
-//       }
-
-//       const {
-//         email,
-//         password,
-//         firstName,
-//         lastName,
-//         schoolOrganization,
-//         dateOfBirth,
-//         phoneNumber,
-//         location,
-//         causesOfInterest,
-//         referredBy
-//       } = req.body;
-
-//       const existingUser = await User.findOne({ email });
-//       if (existingUser) {
-//         loggerFunction("warn", `${route} - User already exists. email=${email}`);
-//         return res.status(400).json({ message: "User already exists" });
-//       }
-
-//       const referralCode = generateReferralCode();
-
-//       const user = new User({
-//         email,
-//         password,
-//         profile: {
-//           firstName,
-//           lastName,
-//           schoolOrganization,
-//           dateOfBirth,
-//           phoneNumber,
-//           location,
-//           causesOfInterest: causesOfInterest || []
-//         },
-//         referralCode,
-//         referredBy
-//       });
-
-//       // Handle referral
-//       if (referredBy) {
-//         const referrer = await User.findOne({ referralCode: referredBy });
-//         if (referrer) {
-//           referrer.referralCount += 1;
-//           if (referrer.referralCount >= 5 && !referrer.badges.includes("Social Butterfly")) {
-//             referrer.badges.push("Social Butterfly");
-//           }
-//           await referrer.save();
-//         }
-//       }
-
-//       await user.save();
-
-//       const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET || "fallback_secret", {
-//         expiresIn: "7d"
-//       });
-//       loggerFunction("debug", `${route} - User registered successfully. email=${user.email}`);
-//       loggerFunction("info", `${route} - Response sent successfully.`);
-//       res.status(201).json({
-//         message: "User registered successfully",
-//         token,
-//         user: {
-//           id: user._id,
-//           email: user.email,
-//           role: user.role,
-//           profile: user.profile
-//         }
-//       });
-//     } catch (error) {
-//       loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-//       res.status(500).json({ message: "Server error", error: error.message });
-//     }
-//   }
-// );
 router.post("/register", upload.single("profilePicture"), async (req, res) => {
   const route = "POST /register";
   try {
@@ -411,151 +316,6 @@ router.post(
   }
 );
 
-// // Forget Password
-// router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
-//   const route = "POST /forget-password";
-//   try {
-//     loggerFunction("info", `${route} - API execution started.`);
-//     loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
-
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
-//       return res.status(400).json({ errors: errors.array() });
-//     }
-
-//     const { email } = req.body;
-//     const user = await User.findOne({ email });
-
-//     if (!user) {
-//       loggerFunction("warn", `${route} - User not found for email=${email}`);
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Generate reset token
-//     const resetToken = crypto.randomBytes(32).toString("hex");
-//     const resetTokenExpiry = Date.now() + parseInt(process.env.RESET_TOKEN_EXPIRY || 3600000);
-
-//     user.resetPasswordToken = resetToken;
-//     user.resetPasswordExpires = resetTokenExpiry;
-//     await user.save();
-
-//     // Send reset email
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-//     });
-
-//     const resetUrl = process.env.RESET_URL.replace("{resetToken}", resetToken);
-//     const mailOptions = {
-//       to: user.email,
-//       from: process.env.EMAIL_USER,
-//       subject: "Password Reset Request",
-//       html: `<p>Hello ${user.profile?.firstName || "Volunteer"},</p>
-//              <p>You requested a password reset. Click the link below to reset your password:</p>
-//              <a href="${resetUrl}">${resetUrl}</a>
-//              <p>This link will expire in 1 hour.</p>`
-//     };
-
-//     await transporter.sendMail(mailOptions);
-
-//     loggerFunction("info", `${route} - Reset email sent successfully for userId=${user._id}`);
-//     res.json({ message: "Password reset link sent to your email." });
-//   } catch (error) {
-//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
-// Reset Password
-// router.post("/reset-password/:token", async (req, res) => {
-//   const route = "POST /reset-password/:token";
-//   try {
-//     const { token } = req.params;
-//     const { password } = req.body;
-
-//     loggerFunction("info", `${route} - Execution started. token=${token}`);
-
-//     const user = await User.findOne({
-//       resetPasswordToken: token,
-//       resetPasswordExpires: { $gt: Date.now() } // Check token expiry
-//     });
-
-//     if (!user) {
-//       loggerFunction("warn", `${route} - Invalid or expired token.`);
-//       return res.status(400).json({ message: "Invalid or expired token" });
-//     }
-
-//     // ✅ Simply assign new password (it will be hashed automatically by pre('save'))
-//     user.password = password;
-//     user.resetPasswordToken = undefined;
-//     user.resetPasswordExpires = undefined;
-//     await user.save();
-
-//     loggerFunction("info", `${route} - Password reset successful for ${user.email}`);
-//     res.status(200).json({ message: "Password has been reset successfully" });
-//   } catch (error) {
-//     loggerFunction("error", `${route} - Error: ${error.message}`);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
-// // Forget Password with Verification Code
-// router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
-//   const route = "POST /forget-password";
-//   try {
-//     loggerFunction("info", `${route} - API execution started.`);
-//     loggerFunction("debug", `${route} - Incoming request body=${JSON.stringify(req.body)}`);
-
-//     const errors = validationResult(req);
-//     if (!errors.isEmpty()) {
-//       loggerFunction("warn", `${route} - Validation failed: ${JSON.stringify(errors.array())}`);
-//       return res.status(400).json({ errors: errors.array() });
-//     }
-
-//     const { email } = req.body;
-//     const user = await User.findOne({ email });
-
-//     if (!user) {
-//       loggerFunction("warn", `${route} - User not found for email=${email}`);
-//       return res.status(404).json({ message: "User not found" });
-//     }
-
-//     // Generate 6-digit numeric OTP
-//     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-//     const resetCodeExpiry = Date.now() + 3600000; // 1 hour
-
-//     user.resetPasswordCode = resetCode;
-//     user.resetPasswordExpires = resetCodeExpiry;
-//     await user.save();
-
-//     // Send reset email
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
-//     });
-
-//     const resetUrl = process.env.RESET_URL.replace("{resetToken}", resetToken);
-//     const mailOptions = {
-//       to: user.email,
-//       from: process.env.EMAIL_USER,
-//       subject: "Password Reset Request",
-//       html: `<p>Hello ${user.profile?.fullName || "Volunteer"},</p>
-//              <p>Your password reset code is:</p>
-//              <h2>${resetCode}</h2>
-//              <p>This code will expire in 1 hour.</p>`
-//     };
-
-//     await transporter.sendMail(mailOptions);
-
-//     loggerFunction("info", `${route} - Reset email sent successfully for userId=${user._id}`);
-//     res.json({ message: "Password reset link sent to your email." });
-//   } catch (error) {
-//     loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
 router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
   const route = "POST /forget-password";
 
@@ -604,8 +364,8 @@ router.post("/forget-password", [body("email").isEmail()], async (req, res) => {
     // Prepare the SendGrid email
     const msg = {
       to: user.email,
-      from: "shubhamb0012@gmail.com",
-      subject: "NEST4US - Password Reset Code",
+      from: process.env.SENDGRID_FROM_EMAIL,
+      subject: process.env.SENDGRID_EMAIL_SUBJECT,
       html: finalHTML
     };
 
@@ -667,7 +427,7 @@ router.post("/reset-password", async (req, res) => {
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 // const REDIRECT_URI = "http://localhost:3000/api/auth/google/callback";
-const REDIRECT_URI = "https://ngo-node-js.onrender.com/api/auth/google/callback";
+const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI;
 
 // 1️⃣ Generate Google login URL
 router.get("/google", (req, res) => {
@@ -727,7 +487,7 @@ router.get("/google/callback", async (req, res) => {
     const appToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     // 5️⃣ Redirect to frontend with JWT
-    res.redirect(`https://ngofontend.web.app/login?token=${appToken}`);
+    res.redirect(`${GOOGLE_FRONTEND_REDIRECT_URI}?token=${appToken}`);
   } catch (error) {
     console.error("Google OAuth Error:", error.response?.data || error);
     res.status(500).send("Authentication failed");
