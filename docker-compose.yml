@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   vms_node_app:
     build: .
@@ -17,6 +15,10 @@ services:
     container_name: vms_mongodb
     ports:
       - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+      MONGO_INITDB_DATABASE: nest4us_volunteers
     volumes:
       - mongo_data:/data/db
     restart: always
