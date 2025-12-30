@@ -7,14 +7,13 @@ services:
     env_file:
       - .env
     depends_on:
-      - vms_mongodb
+      - mongo
     restart: always
 
-  vms_mongodb:
+  mongo:
     image: mongo:7
     container_name: vms_mongodb
-    ports:
-      - "27017:27017"
+    command: ["mongod", "--auth"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
