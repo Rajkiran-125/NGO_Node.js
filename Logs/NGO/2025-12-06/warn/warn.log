@@ -1,7 +1,0 @@
-2025-12-06 01:13:01:011 : | warn | "POST /register - User already exists: testkumar@gmail.com" |
-2025-12-06 01:13:09:099 : | warn | "POST /register - User already exists: testkumar123@gmail.com" |
-2025-12-06 01:31:43:4343 : | warn | "GET /newTier - No tier message found in tierMessages.json for tier: None" |
-2025-12-06 01:34:35:3535 : | warn | "GET /newTier - No tier message found in tierMessages.json for tier: None" |
-2025-12-06 01:44:15:1515 : | warn | "POST /login - Invalid password attempt for email=rajjaiswar1256@gmail.com" |
-2025-12-06 01:44:23:2323 : | warn | "POST /login - Invalid password attempt for email=rajjaiswar1256@gmail.com" |
-2025-12-06 14:58:03:033 : | warn | "heelloo" |
