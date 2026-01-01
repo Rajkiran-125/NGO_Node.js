@@ -1108,8 +1108,9 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
 
     const labelMapping = {
       "NEST4US Service Projects": "Service Projects",
-      "NEST4US Community Events": "Community Events",
+      "NEST4US Community/School Events": "Community/School Events",
       "NEST4US Food Rescues": "Food Rescues",
+      "NEST4US Community Resource Distributions": "Community Resource Distributions",
       "NEST Tutors": "NEST Tutors",
       "NEST4US Notes of Kindness": "Notes of Kindness",
       "NEST4US Workshops": "Workshops",
@@ -1119,8 +1120,9 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
 
     const categoryOrder = [
       "Service Projects",
-      "Community Events",
+      "Community/School Events",
       "Food Rescues",
+      "Community Resource Distributions",
       "NEST Tutors",
       "Notes of Kindness",
       "Workshops",
