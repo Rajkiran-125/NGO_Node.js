@@ -20,10 +20,7 @@ app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-});
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers");
 
 // app.get("/", (req, res) => {
 //   res.json(
