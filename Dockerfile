@@ -15,7 +15,7 @@ COPY . .
 # Expose application port
 EXPOSE 3000
 
-RUN chmod -R 755 .
+RUN chmod -R 775 .
 
 # Start application
 CMD ["node", "server.js"]
