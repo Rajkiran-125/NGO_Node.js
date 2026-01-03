@@ -313,7 +313,7 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
           const json = JSON.parse(causesOfInterest);
           parsed = Array.isArray(json) ? json : [json];
         } catch {
-          parsed = [causesOfInterest]; // wrap plain string
+          parsed = [causesOfInterest];
         }
       }
 
