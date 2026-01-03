@@ -304,13 +304,20 @@ router.post("/profile/update", auth, upload.single("profilePicture"), async (req
     // 4️⃣ Causes of interest (array)
     // ----------------------------
     if (causesOfInterest) {
-      try {
-        const parsed = typeof causesOfInterest === "string" ? JSON.parse(causesOfInterest) : causesOfInterest;
+      let parsed;
 
-        updateData["profile.causesOfInterest"] = parsed;
-      } catch (err) {
-        loggerFunction("warn", `${route} - Invalid causesOfInterest JSON`);
+      if (Array.isArray(causesOfInterest)) {
+        parsed = causesOfInterest;
+      } else if (typeof causesOfInterest === "string") {
+        try {
+          const json = JSON.parse(causesOfInterest);
+          parsed = Array.isArray(json) ? json : [json];
+        } catch {
+          parsed = [causesOfInterest]; // wrap plain string
+        }
       }
+
+      updateData["profile.causesOfInterest"] = parsed;
     }
 
     // ----------------------------
