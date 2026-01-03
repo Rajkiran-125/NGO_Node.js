@@ -6,6 +6,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - volunteer_uploads:/app/uploads
     depends_on:
       - mongo
     restart: always
@@ -24,3 +26,4 @@ services:
 
 volumes:
   mongo_data:
+  volunteer_uploads:

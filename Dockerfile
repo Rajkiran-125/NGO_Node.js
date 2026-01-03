@@ -15,7 +15,10 @@ COPY . .
 # Expose application port
 EXPOSE 3000
 
-RUN chmod -R 775 .
+RUN chmod -R 755 .
+RUN chown -R www-data:www-data /var/lib/docker/volumes/volunteer_uploads/_data
+RUN chmod -R 755 /var/lib/docker/volumes/volunteer_uploads/_data
+
 
 # Start application
 CMD ["node", "server.js"]

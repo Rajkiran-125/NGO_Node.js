@@ -6,15 +6,16 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    volumes:
+      - volunteer_uploads:/app/uploads
     depends_on:
-      - vms_mongodb
+      - mongo
     restart: always
 
-  vms_mongodb:
+  mongo:
     image: mongo:7
     container_name: vms_mongodb
-    ports:
-      - "27017:27017"
+    command: ["mongod", "--auth"]
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
@@ -25,3 +26,4 @@ services:
 
 volumes:
   mongo_data:
+  volunteer_uploads:
