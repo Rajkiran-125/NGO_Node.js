@@ -44,7 +44,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({
@@ -56,17 +56,20 @@ const upload = multer({
     const mime = allowed.test(file.mimetype);
     if (ext && mime) cb(null, true);
     else cb(new Error("Only images are allowed!"));
-  }
+  },
 });
 
 // Get volunteer dashboard data
 router.get("/dashboard", auth, async (req, res) => {
   const route = "GET /dashboard";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
     const user = await User.findById(req.user._id);
     const hoursHistory = await VolunteerHours.find({
-      volunteerId: req.user._id
+      volunteerId: req.user._id,
     }).sort({ submittedAt: -1 });
 
     // Calculate total approved hours from VolunteerHours
@@ -74,15 +77,15 @@ router.get("/dashboard", auth, async (req, res) => {
       {
         $match: {
           volunteerId: req.user._id,
-          status: "approved"
-        }
+          status: "approved",
+        },
       },
       {
         $group: {
           _id: null,
-          total: { $sum: "$hours" }
-        }
-      }
+          total: { $sum: "$hours" },
+        },
+      },
     ]);
 
     const approvedTotalHours = approvedHoursAgg[0]?.total || 0;
@@ -109,21 +112,24 @@ router.get("/dashboard", auth, async (req, res) => {
           status: "approved",
           serviceDate: {
             $gte: new Date(currentYear, 0, 1),
-            $lt: new Date(currentYear + 1, 0, 1)
-          }
-        }
+            $lt: new Date(currentYear + 1, 0, 1),
+          },
+        },
       },
       {
         $group: {
           _id: null,
-          totalHours: { $sum: "$hours" }
-        }
-      }
+          totalHours: { $sum: "$hours" },
+        },
+      },
     ]);
 
     const thisYearTotal = thisYearHours[0]?.totalHours || 0;
 
-    loggerFunction("info", `${route} - Response sent successfully. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - Response sent successfully. userId=${req.user._id}`
+    );
     loggerFunction(
       "debug",
       `${route} - Response sample: ${JSON.stringify(
@@ -141,18 +147,21 @@ router.get("/dashboard", auth, async (req, res) => {
       badges: user.badges,
       tierMessages,
       referralCode: user.referralCode,
-      hoursHistory: hoursHistory.map(entry => ({
+      hoursHistory: hoursHistory.map((entry) => ({
         id: entry._id,
         activityName: entry.activityName,
         serviceDate: entry.serviceDate,
         hours: entry.hours,
         status: entry.status,
         rejectionReason: entry.rejectionReason,
-        submittedAt: entry.submittedAt
-      }))
+        submittedAt: entry.submittedAt,
+      })),
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -160,7 +169,10 @@ router.get("/dashboard", auth, async (req, res) => {
 router.get("/newTier", auth, async (req, res) => {
   const route = "GET /newTier";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
     const userId = req.user._id;
 
     const user = await User.findById(userId);
@@ -177,13 +189,19 @@ router.get("/newTier", auth, async (req, res) => {
     if (user.tier !== user.lastAcknowledgedTier) {
       newTierUnlocked = true;
       unlockedTier = user.tier;
-      loggerFunction("info", `${route} - New tier unlocked! unlockedTier=${unlockedTier} userId=${userId}`);
+      loggerFunction(
+        "info",
+        `${route} - New tier unlocked! unlockedTier=${unlockedTier} userId=${userId}`
+      );
 
       // Load content from tierMessages.json
       tierContent = tierMessages[unlockedTier] || null;
 
       if (!tierContent) {
-        loggerFunction("warn", `${route} - No tier message found in tierMessages.json for tier: ${unlockedTier}`);
+        loggerFunction(
+          "warn",
+          `${route} - No tier message found in tierMessages.json for tier: ${unlockedTier}`
+        );
       }
 
       // Update so next login does NOT send again
@@ -196,15 +214,21 @@ router.get("/newTier", auth, async (req, res) => {
       user,
       newTierUnlocked,
       unlockedTier,
-      tierContent
+      tierContent,
     };
 
     loggerFunction("info", `${route} - Sending response. userId=${userId}`);
-    loggerFunction("debug", `${route} - Response payload: ${JSON.stringify(responsePayload)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Response payload: ${JSON.stringify(responsePayload)}`
+    );
 
     res.status(200).json(responsePayload);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -223,7 +247,7 @@ router.get("/profile", auth, async (req, res) => {
 
     res.status(200).json({
       message: "User profile fetched successfully",
-      user
+      user,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -231,141 +255,187 @@ router.get("/profile", auth, async (req, res) => {
 });
 
 // Update profile
-router.post("/profile/update", auth, upload.single("profilePicture"), async (req, res) => {
-  const route = "POST /profile/update";
-  try {
-    loggerFunction("info", `${route} - Started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - Incoming Body: ${JSON.stringify(req.body)}`);
+router.post(
+  "/profile/update",
+  auth,
+  upload.single("profilePicture"),
+  async (req, res) => {
+    const route = "POST /profile/update";
+    try {
+      loggerFunction("info", `${route} - Started. userId=${req.user._id}`);
+      loggerFunction(
+        "debug",
+        `${route} - Incoming Body: ${JSON.stringify(req.body)}`
+      );
 
-    const { firstName, lastName, schoolOrganization, dateOfBirth, phoneNumber, state, country, causesOfInterest } =
-      req.body;
+      const {
+        firstName,
+        lastName,
+        schoolOrganization,
+        dateOfBirth,
+        phoneNumber,
+        state,
+        country,
+        causesOfInterest,
+      } = req.body;
 
-    let updateData = {};
+      let updateData = {};
 
-    // if (!req.file) {
-    //   return res.status(400).json({ message: "Profile picture is required" });
-    // }
+      // if (!req.file) {
+      //   return res.status(400).json({ message: "Profile picture is required" });
+      // }
 
-    const requiredFields = {
-      // fullName,
-      firstName,
-      lastName,
-      schoolOrganization,
-      dateOfBirth,
-      phoneNumber,
-      state,
-      country,
-      causesOfInterest
-    };
+      const requiredFields = {
+        // fullName,
+        firstName,
+        lastName,
+        schoolOrganization,
+        dateOfBirth,
+        phoneNumber,
+        state,
+        country,
+        causesOfInterest,
+      };
 
-    for (const [key, value] of Object.entries(requiredFields)) {
-      if (!value || value === "") {
-        return res.status(400).json({ message: `${key} is required` });
-      }
-    }
-
-    // if (!location.state || !location.country) {
-    //   return res.status(400).json({ message: "Location (state and country) is required" });
-    // }
-
-    // ----------------------------
-    // 1️⃣ Handle profile picture
-    // ----------------------------
-    if (req.file) {
-      const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
-      updateData["profile.profilePicture"] = filePath;
-    }
-
-    // ----------------------------
-    // 2️⃣ Normal profile fields
-    // ----------------------------
-    // if (fullName !== undefined) updateData["profile.fullName"] = fullName;
-    if (firstName !== undefined) updateData["profile.firstName"] = firstName;
-    if (lastName !== undefined) updateData["profile.lastName"] = lastName;
-
-    if (schoolOrganization !== undefined) updateData["profile.schoolOrganization"] = schoolOrganization;
-
-    if (dateOfBirth !== undefined) updateData["profile.dateOfBirth"] = dateOfBirth;
-
-    if (phoneNumber !== undefined) updateData["profile.phoneNumber"] = phoneNumber;
-
-    if (causesOfInterest !== undefined) updateData["profile.causesOfInterest"] = causesOfInterest;
-
-    // ----------------------------
-    // 3️⃣ Location (state / country)
-    // ----------------------------
-    if (state !== undefined) {
-      updateData["profile.location.state"] = state;
-    }
-    if (country !== undefined) {
-      updateData["profile.location.country"] = country;
-    }
-    // ----------------------------
-    // 4️⃣ Causes of interest (array)
-    // ----------------------------
-    if (causesOfInterest) {
-      let parsed;
-
-      if (Array.isArray(causesOfInterest)) {
-        parsed = causesOfInterest;
-      } else if (typeof causesOfInterest === "string") {
-        try {
-          const json = JSON.parse(causesOfInterest);
-          parsed = Array.isArray(json) ? json : [json];
-        } catch {
-          parsed = [causesOfInterest];
+      for (const [key, value] of Object.entries(requiredFields)) {
+        if (!value || value === "") {
+          return res.status(400).json({ message: `${key} is required` });
         }
       }
 
-      updateData["profile.causesOfInterest"] = parsed;
+      // if (!location.state || !location.country) {
+      //   return res.status(400).json({ message: "Location (state and country) is required" });
+      // }
+
+      // ----------------------------
+      // 1️⃣ Handle profile picture
+      // ----------------------------
+      if (req.file) {
+        const filePath = `/uploads/userProfilePictures/${req.file.filename}`;
+        updateData["profile.profilePicture"] = filePath;
+      }
+
+      // ----------------------------
+      // 2️⃣ Normal profile fields
+      // ----------------------------
+      // if (fullName !== undefined) updateData["profile.fullName"] = fullName;
+      if (firstName !== undefined) updateData["profile.firstName"] = firstName;
+      if (lastName !== undefined) updateData["profile.lastName"] = lastName;
+
+      if (schoolOrganization !== undefined)
+        updateData["profile.schoolOrganization"] = schoolOrganization;
+
+      if (dateOfBirth !== undefined)
+        updateData["profile.dateOfBirth"] = dateOfBirth;
+
+      if (phoneNumber !== undefined)
+        updateData["profile.phoneNumber"] = phoneNumber;
+
+      if (causesOfInterest !== undefined)
+        updateData["profile.causesOfInterest"] = causesOfInterest;
+
+      // ----------------------------
+      // 3️⃣ Location (state / country)
+      // ----------------------------
+      if (state !== undefined) {
+        updateData["profile.location.state"] = state;
+      }
+      if (country !== undefined) {
+        updateData["profile.location.country"] = country;
+      }
+      // ----------------------------
+      // 4️⃣ Causes of interest (array)
+      // ----------------------------
+      if (causesOfInterest) {
+        let parsed;
+
+        if (Array.isArray(causesOfInterest)) {
+          parsed = causesOfInterest;
+        } else if (typeof causesOfInterest === "string") {
+          try {
+            const json = JSON.parse(causesOfInterest);
+            parsed = Array.isArray(json) ? json : [json];
+          } catch {
+            parsed = [causesOfInterest];
+          }
+        }
+
+        updateData["profile.causesOfInterest"] = parsed;
+      }
+
+      // ----------------------------
+      // 5️⃣ Update DB
+      // ----------------------------
+      const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      ).select("-password");
+
+      loggerFunction("info", `${route} - Profile updated successfully`);
+
+      return res.status(200).json({
+        message: "Profile updated successfully",
+        user: updatedUser,
+      });
+    } catch (error) {
+      loggerFunction("error", `${route} - Error: ${error.message}`);
+      res.status(500).json({ message: "Server error", error: error.message });
     }
-
-    // ----------------------------
-    // 5️⃣ Update DB
-    // ----------------------------
-    const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    ).select("-password");
-
-    loggerFunction("info", `${route} - Profile updated successfully`);
-
-    return res.status(200).json({
-      message: "Profile updated successfully",
-      user: updatedUser
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
   }
-});
+);
 
 // Update notification preferences
 router.put("/notifications", auth, async (req, res) => {
   const route = "PUT /notifications";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
-    const { weeklyDigest, monthlyDigest, approvalNotifications, achievementNotifications } = req.body;
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - userId=${
+        req.user._id
+      }, Incoming request body: ${JSON.stringify(req.body)}`
+    );
+    const {
+      weeklyDigest,
+      monthlyDigest,
+      approvalNotifications,
+      achievementNotifications,
+    } = req.body;
 
     await User.findByIdAndUpdate(req.user._id, {
       notifications: {
         weeklyDigest: weeklyDigest ?? req.user.notifications.weeklyDigest,
         monthlyDigest: monthlyDigest ?? req.user.notifications.monthlyDigest,
-        approvalNotifications: approvalNotifications ?? req.user.notifications.approvalNotifications,
-        achievementNotifications: achievementNotifications ?? req.user.notifications.achievementNotifications
-      }
+        approvalNotifications:
+          approvalNotifications ?? req.user.notifications.approvalNotifications,
+        achievementNotifications:
+          achievementNotifications ??
+          req.user.notifications.achievementNotifications,
+      },
     });
 
-    loggerFunction("info", `${route} - Response sent successfully. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - Response sent successfully. userId=${req.user._id}`
+    );
     loggerFunction(
       "debug",
-      `${route} - Notification preferences updated successfully: ${JSON.stringify(req.body, null, 2)}`
+      `${route} - Notification preferences updated successfully: ${JSON.stringify(
+        req.body,
+        null,
+        2
+      )}`
     );
     res.json({ message: "Notification preferences updated successfully" });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -374,12 +444,18 @@ router.put("/notifications", auth, async (req, res) => {
 router.post("/hours/export", auth, async (req, res) => {
   const route = "POST /hours/export";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
 
     const { fromDate, toDate } = req.body;
 
     if (!fromDate) {
-      loggerFunction("warn", `${route} - Missing fromDate. userId=${req.user._id}`);
+      loggerFunction(
+        "warn",
+        `${route} - Missing fromDate. userId=${req.user._id}`
+      );
       return res.status(400).json({ message: "fromDate is required" });
     }
 
@@ -392,7 +468,10 @@ router.post("/hours/export", auth, async (req, res) => {
       const to = new Date(toDate);
       to.setHours(23, 59, 59, 999);
       dateFilter = { $gte: from, $lte: to };
-      loggerFunction("debug", `${route} - Date range mode: ${from.toISOString()} to ${to.toISOString()}`);
+      loggerFunction(
+        "debug",
+        `${route} - Date range mode: ${from.toISOString()} to ${to.toISOString()}`
+      );
     } else {
       // Single-day mode
       const startOfDay = new Date(from);
@@ -400,14 +479,17 @@ router.post("/hours/export", auth, async (req, res) => {
       const endOfDay = new Date(from);
       endOfDay.setHours(23, 59, 59, 999);
       dateFilter = { $gte: startOfDay, $lte: endOfDay };
-      loggerFunction("debug", `${route} - Single-date mode: ${startOfDay.toISOString()}`);
+      loggerFunction(
+        "debug",
+        `${route} - Single-date mode: ${startOfDay.toISOString()}`
+      );
     }
 
     // Query only approved entries
     const match = {
       volunteerId: req.user._id,
       status: "approved",
-      serviceDate: dateFilter
+      serviceDate: dateFilter,
     };
 
     // Fetch approved volunteer hours
@@ -417,28 +499,41 @@ router.post("/hours/export", auth, async (req, res) => {
       .lean();
 
     // Calculate total approved hours
-    const totalHours = approvedHours.reduce((sum, entry) => sum + (entry.hours || 0), 0);
+    const totalHours = approvedHours.reduce(
+      (sum, entry) => sum + (entry.hours || 0),
+      0
+    );
 
     // Format response
-    const responseData = approvedHours.map(entry => ({
+    const responseData = approvedHours.map((entry) => ({
       serviceActivity: entry.activityName,
       serviceDate: entry.serviceDate,
       numberOfHours: entry.hours,
-      status: "Approved"
+      status: "Approved",
     }));
 
-    loggerFunction("info", `${route} - Retrieved ${approvedHours.length} approved records for userId=${req.user._id}.`);
+    loggerFunction(
+      "info",
+      `${route} - Retrieved ${approvedHours.length} approved records for userId=${req.user._id}.`
+    );
     loggerFunction(
       "debug",
-      `${route} - Response preview: ${JSON.stringify({ totalHours, sample: responseData.slice(0, 2) }, null, 2)}`
+      `${route} - Response preview: ${JSON.stringify(
+        { totalHours, sample: responseData.slice(0, 2) },
+        null,
+        2
+      )}`
     );
 
     res.json({
       records: responseData,
-      totalHours
+      totalHours,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -449,7 +544,10 @@ router.get("/summary", auth, async (req, res) => {
   try {
     const VOLUNTEER_HOURLY_RATE = 34.79;
 
-    loggerFunction("info", `${route} - Fetching volunteer summary. volunteerId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - Fetching volunteer summary. volunteerId=${req.user._id}`
+    );
 
     // Lifetime approved hours
     const lifetimeAgg = await VolunteerHours.aggregate([
@@ -457,9 +555,9 @@ router.get("/summary", auth, async (req, res) => {
       {
         $group: {
           _id: null,
-          totalHours: { $sum: "$hours" }
-        }
-      }
+          totalHours: { $sum: "$hours" },
+        },
+      },
     ]);
     const lifetimeHours = lifetimeAgg[0]?.totalHours || 0;
 
@@ -472,21 +570,23 @@ router.get("/summary", auth, async (req, res) => {
           status: "approved",
           serviceDate: {
             $gte: new Date(currentYear, 0, 1),
-            $lt: new Date(currentYear + 1, 0, 1)
-          }
-        }
+            $lt: new Date(currentYear + 1, 0, 1),
+          },
+        },
       },
       {
         $group: {
           _id: null,
-          totalHours: { $sum: "$hours" }
-        }
-      }
+          totalHours: { $sum: "$hours" },
+        },
+      },
     ]);
     const currentYearHours = yearAgg[0]?.totalHours || 0;
 
     // Calculate value of service
-    const valueOfService = Number((lifetimeHours * VOLUNTEER_HOURLY_RATE).toFixed(2));
+    const valueOfService = Number(
+      (lifetimeHours * VOLUNTEER_HOURLY_RATE).toFixed(2)
+    );
 
     // Determine recognition tier
     let recognitionTier = "None";
@@ -505,18 +605,24 @@ router.get("/summary", auth, async (req, res) => {
       lifetimeHours,
       currentYearHours,
       valueOfService,
-      recognitionTier
+      recognitionTier,
     };
 
     loggerFunction("info", `${route} - Summary generated successfully.`);
-    loggerFunction("debug", `${route} - Response: ${JSON.stringify(response, null, 2)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Response: ${JSON.stringify(response, null, 2)}`
+    );
 
     res.status(200).json({
       message: "Volunteer summary fetched successfully",
-      data: response
+      data: response,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -525,7 +631,10 @@ router.get("/summary", auth, async (req, res) => {
 router.post("/change-password", auth, async (req, res) => {
   const route = "POST /change-password";
   try {
-    loggerFunction("info", `${route} - Execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - Execution started. userId=${req.user._id}`
+    );
 
     const { oldPassword, newPassword, confirmPassword } = req.body;
     const userId = req.user.id; // comes from authMiddleware
@@ -553,10 +662,16 @@ router.post("/change-password", auth, async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    loggerFunction("info", `${route} - Password changed successfully for ${user.email}`);
+    loggerFunction(
+      "info",
+      `${route} - Password changed successfully for ${user.email}`
+    );
     res.status(200).json({ message: "Password changed successfully" });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -576,18 +691,19 @@ router.get("/service-types", (req, res) => {
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Other"
+      "NEST4US Impact Internship",
+      "Other",
     ];
 
     res.status(200).json({
       success: true,
-      data: serviceTypes
+      data: serviceTypes,
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.message}`);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch service types"
+      message: "Failed to fetch service types",
     });
   }
 });
@@ -617,7 +733,11 @@ router.get("/users", async (req, res) => {
     // 🔍 Search by email OR firstName OR lastName
     if (search) {
       const regex = new RegExp(search, "i");
-      query.$or = [{ email: regex }, { "profile.firstName": regex }, { "profile.lastName": regex }];
+      query.$or = [
+        { email: regex },
+        { "profile.firstName": regex },
+        { "profile.lastName": regex },
+      ];
     }
 
     if (role) query.role = role;
@@ -640,10 +760,13 @@ router.get("/users", async (req, res) => {
       page,
       totalUsers,
       totalPages: Math.ceil(totalUsers / limit),
-      users
+      users,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -663,13 +786,13 @@ router.get("/check-profile-completion", auth, async (req, res) => {
     return res.status(200).json({
       redirectToUpdateProfile: emptyFields.length > 0,
       emptyFields,
-      isProfileComplete: emptyFields.length === 0
+      isProfileComplete: emptyFields.length === 0,
     });
   } catch (error) {
     console.error("Profile completion check error:", error);
     return res.status(500).json({
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 });

@@ -14,8 +14,14 @@ const storage = multer.diskStorage({
     cb(null, "uploads/proof/");
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname));
-  }
+    cb(
+      null,
+      Date.now() +
+        "-" +
+        Math.round(Math.random() * 1e9) +
+        path.extname(file.originalname)
+    );
+  },
 });
 
 const upload = multer({
@@ -23,7 +29,9 @@ const upload = multer({
   limits: { fileSize: 10000000 }, // 10MB
   fileFilter: (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|pdf/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = allowedTypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
     const mimetype = allowedTypes.test(file.mimetype);
 
     if (mimetype && extname) {
@@ -31,7 +39,7 @@ const upload = multer({
     } else {
       cb(new Error("Only .png, .jpg, .jpeg and .pdf files are allowed!"));
     }
-  }
+  },
 });
 
 // Submit volunteer hours
@@ -55,21 +63,32 @@ router.post(
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Other"
+      "NEST4US Impact Internship",
+      "Other",
     ]),
     body("hours").isFloat({ min: 0.1 }),
-    body("description").notEmpty()
+    body("description").notEmpty(),
   ],
   async (req, res) => {
     const route = "POST /submit";
     try {
-      loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-      loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
+      loggerFunction(
+        "info",
+        `${route} - API execution started. userId=${req.user._id}`
+      );
+      loggerFunction(
+        "debug",
+        `${route} - userId=${
+          req.user._id
+        }, Incoming request body: ${JSON.stringify(req.body)}`
+      );
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         loggerFunction(
           "warn",
-          `${route} - Validation failed. userId=${req.user._id} errors=${JSON.stringify(errors.array())}`
+          `${route} - Validation failed. userId=${
+            req.user._id
+          } errors=${JSON.stringify(errors.array())}`
         );
         return res.status(400).json({ errors: errors.array() });
       }
@@ -84,7 +103,7 @@ router.post(
         serviceType,
         hours,
         description,
-        isHistorical
+        isHistorical,
       } = req.body;
 
       const volunteerHours = new VolunteerHours({
@@ -99,7 +118,7 @@ router.post(
         hours: parseFloat(hours),
         description,
         proofOfService: req.file ? req.file.filename : null,
-        isHistorical: isHistorical === "true"
+        isHistorical: isHistorical === "true",
       });
 
       await volunteerHours.save();
@@ -116,11 +135,14 @@ router.post(
           activityName: volunteerHours.activityName,
           hours: volunteerHours.hours,
           status: volunteerHours.status,
-          submittedAt: volunteerHours.submittedAt
-        }
+          submittedAt: volunteerHours.submittedAt,
+        },
       });
     } catch (error) {
-      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+      loggerFunction(
+        "error",
+        `${route} - Error occurred: ${error.stack || error.message}`
+      );
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -130,8 +152,16 @@ router.post(
 router.get("/history", auth, async (req, res) => {
   const route = "GET /history";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming Query: ${JSON.stringify(req.query)}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - userId=${req.user._id}, Incoming Query: ${JSON.stringify(
+        req.query
+      )}`
+    );
     const { startDate, endDate, status } = req.query;
 
     let query = { volunteerId: req.user._id };
@@ -139,7 +169,7 @@ router.get("/history", auth, async (req, res) => {
     if (startDate && endDate) {
       query.serviceDate = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $lte: new Date(endDate),
       };
     }
 
@@ -152,11 +182,16 @@ router.get("/history", auth, async (req, res) => {
     loggerFunction("info", `${route} - Response sent successfully.`);
     loggerFunction(
       "debug",
-      `${route} - Response sent successfully. userId=${req.user._id}, Data=${JSON.stringify(hours)}`
+      `${route} - Response sent successfully. userId=${
+        req.user._id
+      }, Data=${JSON.stringify(hours)}`
     );
     res.json(hours);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -182,40 +217,65 @@ router.post(
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Other"
+      "NEST4US Impact Internship",
+      "Other",
     ]),
     body("hours").isFloat({ min: 0.1 }),
-    body("description").notEmpty()
+    body("description").notEmpty(),
   ],
   async (req, res) => {
     const route = "POST /update";
     try {
-      loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-      loggerFunction("debug", `${route} - userId=${req.user._id}, Incoming request body: ${JSON.stringify(req.body)}`);
+      loggerFunction(
+        "info",
+        `${route} - API execution started. userId=${req.user._id}`
+      );
+      loggerFunction(
+        "debug",
+        `${route} - userId=${
+          req.user._id
+        }, Incoming request body: ${JSON.stringify(req.body)}`
+      );
 
       // Validation error handling
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         loggerFunction(
           "warn",
-          `${route} - Validation failed. userId=${req.user._id}, errors=${JSON.stringify(errors.array())}`
+          `${route} - Validation failed. userId=${
+            req.user._id
+          }, errors=${JSON.stringify(errors.array())}`
         );
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { id, firstName, lastName, activityName, serviceDate, serviceType, hours, description, isHistorical } =
-        req.body;
+      const {
+        id,
+        firstName,
+        lastName,
+        activityName,
+        serviceDate,
+        serviceType,
+        hours,
+        description,
+        isHistorical,
+      } = req.body;
 
       // Check if entry exists & belongs to logged-in user
       const hoursEntry = await VolunteerHours.findOne({
         _id: id,
         volunteerId: req.user._id,
-        status: "pending" // Only pending entries can be updated
+        status: "pending", // Only pending entries can be updated
       });
 
       if (!hoursEntry) {
-        loggerFunction("warn", `${route} - Entry not found or not editable: ${id}`);
-        return res.status(404).json({ message: "Entry not found or already approved/rejected" });
+        loggerFunction(
+          "warn",
+          `${route} - Entry not found or not editable: ${id}`
+        );
+        return res
+          .status(404)
+          .json({ message: "Entry not found or already approved/rejected" });
       }
 
       // Prepare updates
@@ -228,7 +288,7 @@ router.post(
         serviceType,
         hours: parseFloat(hours),
         description,
-        isHistorical: isHistorical === "true"
+        isHistorical: isHistorical === "true",
       };
 
       // Handle optional file upload
@@ -239,18 +299,24 @@ router.post(
       // Update the entry
       const updatedEntry = await VolunteerHours.findByIdAndUpdate(id, updates, {
         new: true,
-        runValidators: true
+        runValidators: true,
       });
 
       loggerFunction("info", `${route} - Update successful.`);
-      loggerFunction("debug", `${route} - Updated entry: ${JSON.stringify(updatedEntry)}`);
+      loggerFunction(
+        "debug",
+        `${route} - Updated entry: ${JSON.stringify(updatedEntry)}`
+      );
 
       res.json({
         message: "Volunteer hours updated successfully",
-        entry: updatedEntry
+        entry: updatedEntry,
       });
     } catch (error) {
-      loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+      loggerFunction(
+        "error",
+        `${route} - Error: ${error.stack || error.message}`
+      );
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -261,7 +327,10 @@ router.post("/get-entry", auth, async (req, res) => {
   const route = "POST /get-entry";
   try {
     loggerFunction("info", `${route} - API started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - Incoming request body: ${JSON.stringify(req.body)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Incoming request body: ${JSON.stringify(req.body)}`
+    );
 
     const { id } = req.body;
 
@@ -272,11 +341,14 @@ router.post("/get-entry", auth, async (req, res) => {
     // Find entry for the logged-in user
     const entry = await VolunteerHours.findOne({
       _id: id,
-      volunteerId: req.user._id
+      volunteerId: req.user._id,
     });
 
     if (!entry) {
-      loggerFunction("warn", `${route} - Entry not found or unauthorized. ID: ${id}`);
+      loggerFunction(
+        "warn",
+        `${route} - Entry not found or unauthorized. ID: ${id}`
+      );
       return res.status(404).json({ message: "Entry not found" });
     }
 
@@ -285,10 +357,13 @@ router.post("/get-entry", auth, async (req, res) => {
 
     res.json({
       success: true,
-      entry
+      entry,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -297,19 +372,27 @@ router.post("/get-entry", auth, async (req, res) => {
 router.get("/export", auth, async (req, res) => {
   const route = "GET /export";
   try {
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id}`);
-    loggerFunction("debug", `${route} - userId= ${req.user?._id}, Incoming Query: ${JSON.stringify(req.query)}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id}`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - userId= ${req.user?._id}, Incoming Query: ${JSON.stringify(
+        req.query
+      )}`
+    );
     const { startDate, endDate, format } = req.query;
 
     let query = {
       volunteerId: req.user._id,
-      status: "approved"
+      status: "approved",
     };
 
     if (startDate && endDate) {
       query.serviceDate = {
         $gte: new Date(startDate),
-        $lte: new Date(endDate)
+        $lte: new Date(endDate),
       };
     }
 
@@ -319,22 +402,31 @@ router.get("/export", auth, async (req, res) => {
       res.json(hours);
     } else {
       // Return CSV format
-      const csvHeaders = "Activity Name,Service Date,Hours,Service Type,Description,Status\n";
+      const csvHeaders =
+        "Activity Name,Service Date,Hours,Service Type,Description,Status\n";
       const csvData = hours
         .map(
-          entry =>
-            `"${entry.activityName}","${entry.serviceDate.toISOString().split("T")[0]}","${entry.hours}","${
-              entry.serviceType
-            }","${entry.description}","${entry.status}"`
+          (entry) =>
+            `"${entry.activityName}","${
+              entry.serviceDate.toISOString().split("T")[0]
+            }","${entry.hours}","${entry.serviceType}","${
+              entry.description
+            }","${entry.status}"`
         )
         .join("\n");
 
       res.setHeader("Content-Type", "text/csv");
-      res.setHeader("Content-Disposition", "attachment; filename=volunteer_hours.csv");
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=volunteer_hours.csv"
+      );
       res.send(csvHeaders + csvData);
     }
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -343,8 +435,14 @@ router.get("/export", auth, async (req, res) => {
 router.get("/:id", auth, async (req, res) => {
   const route = "GET /:id";
   try {
-    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
-    loggerFunction("debug", `${route} - Incoming request. Id=${req.params.id}, userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. Id=${req.params.id}`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - Incoming request. Id=${req.params.id}, userId=${req.user._id}`
+    );
     const { id } = req.params;
 
     // basic ObjectId guard (optional)
@@ -380,11 +478,19 @@ router.get("/:id", auth, async (req, res) => {
     }
 
     loggerFunction("info", `${route} - Response sent successfully.`);
-    loggerFunction("debug", `${route} - Response body. Id=${id} Data=${JSON.stringify(entry)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Response body. Id=${id} Data=${JSON.stringify(entry)}`
+    );
     return res.json({ data: entry });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 });
 
@@ -407,27 +513,38 @@ router.patch(
         "Notes of Kindness",
         "Workshops",
         "Donations",
-        "Other"
+        "Other",
       ])
       .withMessage("Invalid serviceType"),
-    body("hours").optional().isFloat({ min: 0.1 }).withMessage("Hours must be a number"),
-    body("status").optional().isIn(["pending", "approved", "rejected"]).withMessage("Invalid status"),
+    body("hours")
+      .optional()
+      .isFloat({ min: 0.1 })
+      .withMessage("Hours must be a number"),
+    body("status")
+      .optional()
+      .isIn(["pending", "approved", "rejected"])
+      .withMessage("Invalid status"),
     body("firstName").optional().notEmpty(),
     body("lastName").optional().notEmpty(),
     // body("fullName").optional().notEmpty(),
     body("activityName").optional().notEmpty(),
     // body("schoolOrganization").optional().notEmpty(),
-    body("description").optional().notEmpty()
+    body("description").optional().notEmpty(),
   ],
   async (req, res) => {
     const route = "PATCH /:id";
     try {
-      loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
+      loggerFunction(
+        "info",
+        `${route} - API execution started. Id=${req.params.id}`
+      );
       loggerFunction(
         "debug",
-        `${route} - Incoming request. Id=${req.params.id}, userId=${req.user._id}, body=${JSON.stringify({
+        `${route} - Incoming request. Id=${req.params.id}, userId=${
+          req.user._id
+        }, body=${JSON.stringify({
           ...req.body,
-          proofOfService: req.file ? "(file uploaded)" : undefined
+          proofOfService: req.file ? "(file uploaded)" : undefined,
         })}`
       );
       const { id } = req.params;
@@ -439,7 +556,12 @@ router.patch(
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        loggerFunction("warn", `${route} - Validation failed. Id=${id} errors=${JSON.stringify(errors.array())}`);
+        loggerFunction(
+          "warn",
+          `${route} - Validation failed. Id=${id} errors=${JSON.stringify(
+            errors.array()
+          )}`
+        );
         return res.status(400).json({ errors: errors.array() });
       }
 
@@ -448,9 +570,14 @@ router.patch(
         loggerFunction("warn", `${route} - Hours entry not found. Id=${id}`);
         return res.status(404).json({ message: "Hours entry not found" });
       }
-      loggerFunction("debug", `${route} - Hours entry found. Id=${id} Data=${JSON.stringify(entry)}`);
+      loggerFunction(
+        "debug",
+        `${route} - Hours entry found. Id=${id} Data=${JSON.stringify(entry)}`
+      );
 
-      const isOwner = entry.volunteerId && entry.volunteerId.toString() === req.user._id.toString();
+      const isOwner =
+        entry.volunteerId &&
+        entry.volunteerId.toString() === req.user._id.toString();
       const isAdmin = req.user.role === "admin" || req.user.isAdmin === true;
 
       // Owners can only edit their own entries when status is "pending"
@@ -467,7 +594,9 @@ router.patch(
             "warn",
             `${route} - Owner attempted to update non-pending entry. Id=${id} requester=${req.user._id} currentStatus=${entry.status}`
           );
-          return res.status(400).json({ message: "Only pending entries can be updated by owner" });
+          return res
+            .status(400)
+            .json({ message: "Only pending entries can be updated by owner" });
         }
       }
 
@@ -483,7 +612,7 @@ router.patch(
         "hours",
         "description",
         "isHistorical",
-        "rejectionReason"
+        "rejectionReason",
         // status handled below
       ];
 
@@ -491,17 +620,23 @@ router.patch(
       for (const key of allowed) {
         if (Object.prototype.hasOwnProperty.call(req.body, key)) {
           // convert types where appropriate
-          if (key === "serviceDate") updates.serviceDate = new Date(req.body.serviceDate);
+          if (key === "serviceDate")
+            updates.serviceDate = new Date(req.body.serviceDate);
           else if (key === "hours") updates.hours = parseFloat(req.body.hours);
           else if (key === "isHistorical")
-            updates.isHistorical = req.body.isHistorical === "true" || req.body.isHistorical === true;
+            updates.isHistorical =
+              req.body.isHistorical === "true" ||
+              req.body.isHistorical === true;
           else updates[key] = req.body[key];
         }
       }
 
       // Handle uploaded file
       if (req.file) {
-        loggerFunction("debug", `${route} - File uploaded. Id=${id} filename=${req.file.filename}`);
+        loggerFunction(
+          "debug",
+          `${route} - File uploaded. Id=${id} filename=${req.file.filename}`
+        );
         updates.proofOfService = req.file.filename;
       }
 
@@ -511,7 +646,10 @@ router.patch(
         const requestedStatus = req.body.status;
         const validStatus = ["pending", "approved", "rejected"];
         if (!validStatus.includes(requestedStatus)) {
-          loggerFunction("warn", `${route} - Invalid status provided. Id=${id} status=${requestedStatus}`);
+          loggerFunction(
+            "warn",
+            `${route} - Invalid status provided. Id=${id} status=${requestedStatus}`
+          );
           return res.status(400).json({ message: "Invalid status" });
         }
 
@@ -521,7 +659,9 @@ router.patch(
             `${route} - Non-admin attempted to change status. Id=${id} requester=${req.user._id} status=${requestedStatus}`
           );
           // If you want owners to be able to set status back to pending, adjust here.
-          return res.status(403).json({ message: "Only admins can change status" });
+          return res
+            .status(403)
+            .json({ message: "Only admins can change status" });
         }
 
         updates.status = requestedStatus;
@@ -536,30 +676,49 @@ router.patch(
           // pending
           updates.reviewedAt = null;
           updates.reviewedBy = null;
-          loggerFunction("debug", `${route} - Status set to pending -> clearing review metadata. Id=${id}`);
+          loggerFunction(
+            "debug",
+            `${route} - Status set to pending -> clearing review metadata. Id=${id}`
+          );
         }
       }
 
       // Apply update
       const updated = await VolunteerHours.findByIdAndUpdate(id, updates, {
         new: true,
-        runValidators: true
+        runValidators: true,
       });
 
-      loggerFunction("debug", `${route} - Hours entry updated successfully. Id=${id} Data=${JSON.stringify(updated)}`);
+      loggerFunction(
+        "debug",
+        `${route} - Hours entry updated successfully. Id=${id} Data=${JSON.stringify(
+          updated
+        )}`
+      );
       loggerFunction("info", `${route} - Response sent successfully.`);
       return res.json({
         message: "Hours entry updated successfully",
-        entry: updated
+        entry: updated,
       });
     } catch (error) {
       // Multer fileFilter error handling (file type)
-      if (error instanceof multer.MulterError || error.message?.includes("Only .png")) {
-        loggerFunction("warn", `${route} - Multer/file error. Id=${req.params.id} error=${error.message}`);
+      if (
+        error instanceof multer.MulterError ||
+        error.message?.includes("Only .png")
+      ) {
+        loggerFunction(
+          "warn",
+          `${route} - Multer/file error. Id=${req.params.id} error=${error.message}`
+        );
         return res.status(400).json({ message: error.message });
       }
-      loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
-      return res.status(500).json({ message: "Server error", error: error.message });
+      loggerFunction(
+        "error",
+        `${route} - Error occurred: ${error.stack || error.message}`
+      );
+      return res
+        .status(500)
+        .json({ message: "Server error", error: error.message });
     }
   }
 );
