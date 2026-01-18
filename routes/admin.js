@@ -1364,6 +1364,7 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
       "Notes of Kindness",
       "Workshops",
       "Donations",
+      "Impact Internships",
       "Other",
     ];
 
