@@ -31,7 +31,7 @@ function getAttachment(fileName) {
     content: fs.readFileSync(filePath).toString("base64"),
     filename: fileName,
     type: mimeType,
-    disposition: "attachment"
+    disposition: "attachment",
   };
 }
 
@@ -40,7 +40,7 @@ const TIERS = [
   { name: "Kindness Ambassador", min: 50, max: 99, range: "50-99" },
   { name: "Change Catalyst", min: 100, max: 149, range: "100-149" },
   { name: "Service Champion", min: 150, max: 249, range: "150-249" },
-  { name: "Legacy Leader", min: 250, max: null, range: "250+" }
+  { name: "Legacy Leader", min: 250, max: null, range: "250+" },
 ];
 
 // Get pending hours for approval
@@ -96,17 +96,27 @@ router.post("/pending-hours", adminAuth, async (req, res) => {
       .populate("volunteerId", "profile.firstName profile.lastName email")
       .sort({ submittedAt: -1 });
 
-    loggerFunction("debug", `${route} - Sample Record: ${JSON.stringify(pendingHours[0] || {}, null, 2)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Sample Record: ${JSON.stringify(
+        pendingHours[0] || {},
+        null,
+        2
+      )}`
+    );
 
     res.json({
       success: true,
       count: pendingHours.length,
-      data: pendingHours
+      data: pendingHours,
     });
 
     loggerFunction("info", `${route} - Response sent successfully.`);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -131,18 +141,25 @@ router.put(
         "NEST4US Notes of Kindness",
         "NEST4US Workshops",
         "NEST4US Donations",
-        "Other"
+        "NEST4US Impact Internship",
+        "Other",
       ]),
     body("hours").optional().isFloat({ min: 0.1 }),
     body("description").optional().notEmpty(),
-    body("isHistorical").optional().isBoolean()
+    body("isHistorical").optional().isBoolean(),
   ],
   async (req, res) => {
     const route = "PUT /edit-hours/:id";
 
     try {
-      loggerFunction("info", `${route} - API execution started. id=${req.params.id}`);
-      loggerFunction("debug", `${route} - Incoming body: ${JSON.stringify(req.body)}`);
+      loggerFunction(
+        "info",
+        `${route} - API execution started. id=${req.params.id}`
+      );
+      loggerFunction(
+        "debug",
+        `${route} - Incoming body: ${JSON.stringify(req.body)}`
+      );
 
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -159,9 +176,12 @@ router.put(
 
       // 🔒 Only pending entries can be edited
       if (entry.status !== "pending") {
-        loggerFunction("warn", `${route} - Cannot update. Status=${entry.status}`);
+        loggerFunction(
+          "warn",
+          `${route} - Cannot update. Status=${entry.status}`
+        );
         return res.status(400).json({
-          message: "Only pending entries can be edited"
+          message: "Only pending entries can be edited",
         });
       }
 
@@ -172,8 +192,16 @@ router.put(
       //   });
       // }
 
-      const { firstName, lastName, activityName, serviceDate, serviceType, hours, description, isHistorical } =
-        req.body;
+      const {
+        firstName,
+        lastName,
+        activityName,
+        serviceDate,
+        serviceType,
+        hours,
+        description,
+        isHistorical,
+      } = req.body;
 
       // ✅ Update only provided fields
       if (firstName !== undefined) entry.firstName = firstName;
@@ -187,14 +215,20 @@ router.put(
 
       await entry.save();
 
-      loggerFunction("info", `${route} - Entry updated successfully. id=${entry._id}`);
+      loggerFunction(
+        "info",
+        `${route} - Entry updated successfully. id=${entry._id}`
+      );
 
       res.json({
         message: "Volunteer entry updated successfully",
-        entry
+        entry,
       });
     } catch (error) {
-      loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+      loggerFunction(
+        "error",
+        `${route} - Error: ${error.stack || error.message}`
+      );
       res.status(500).json({ message: "Server error", error: error.message });
     }
   }
@@ -203,22 +237,41 @@ router.put(
 router.put("/review-hours/:id", adminAuth, async (req, res) => {
   const route = "PUT /review-hours/:id";
   try {
-    loggerFunction("info", `${route} - API execution started. Id=${req.params.id}`);
-    loggerFunction("debug", `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(req.body)}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. Id=${req.params.id}`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - Id=${req.params.id}, Incoming request body=${JSON.stringify(
+        req.body
+      )}`
+    );
 
     const { status, rejectionReason } = req.body;
 
     if (!["approved", "rejected"].includes(status)) {
-      loggerFunction("warn", `${route} - Invalid status provided. Id=${req.params.id} status=${status}`);
+      loggerFunction(
+        "warn",
+        `${route} - Invalid status provided. Id=${req.params.id} status=${status}`
+      );
       return res.status(400).json({ message: "Invalid status" });
     }
 
     const hoursEntry = await VolunteerHours.findById(req.params.id);
     if (!hoursEntry) {
-      loggerFunction("warn", `${route} - Hours entry not found. Id=${req.params.id}`);
+      loggerFunction(
+        "warn",
+        `${route} - Hours entry not found. Id=${req.params.id}`
+      );
       return res.status(404).json({ message: "Hours entry not found" });
     }
-    loggerFunction("debug", `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Hours entry found. Id=${req.params.id} Data=${JSON.stringify(
+        hoursEntry
+      )}`
+    );
 
     // Update hours entry fields
     hoursEntry.status = status;
@@ -227,19 +280,28 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 
     if (status === "rejected") {
       hoursEntry.rejectionReason = rejectionReason || "";
-      loggerFunction("debug", `${route} - Rejection reason set. Id=${req.params.id}`);
+      loggerFunction(
+        "debug",
+        `${route} - Rejection reason set. Id=${req.params.id}`
+      );
     } else {
       // Clear rejection reason if approving
       hoursEntry.rejectionReason = undefined;
     }
 
     await hoursEntry.save();
-    loggerFunction("info", `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`);
+    loggerFunction(
+      "info",
+      `${route} - Hours entry updated and saved. Id=${req.params.id} newStatus=${status}`
+    );
 
     // Prepare to send email to volunteer
     const volunteer = await User.findById(hoursEntry.volunteerId);
     if (!volunteer) {
-      loggerFunction("warn", `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`);
+      loggerFunction(
+        "warn",
+        `${route} - Volunteer user not found for entry. volunteerId=${hoursEntry.volunteerId}`
+      );
     }
 
     // If approved, update volunteer's total hours and check for tier upgrades
@@ -251,13 +313,15 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 
       // Ensure numeric updates (avoid double-add if entry was already approved before)
       // We assume entry was pending before this review; if you allow re-approvals you must guard here.
-      volunteer.totalHours = (volunteer.totalHours || 0) + (hoursEntry.hours || 0);
+      volunteer.totalHours =
+        (volunteer.totalHours || 0) + (hoursEntry.hours || 0);
 
       // Update this year's hours
       const currentYear = new Date().getFullYear();
       const serviceYear = new Date(hoursEntry.serviceDate).getFullYear();
       if (serviceYear === currentYear) {
-        volunteer.thisYearHours = (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
+        volunteer.thisYearHours =
+          (volunteer.thisYearHours || 0) + (hoursEntry.hours || 0);
       }
 
       // Determine tier based on totalHours
@@ -275,7 +339,11 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
         volunteer.lastTierUpdatedAt = new Date();
 
         // Add badge if not present and tier is not 'None'
-        if (newTier && newTier !== "None" && !volunteer.badges.includes(newTier)) {
+        if (
+          newTier &&
+          newTier !== "None" &&
+          !volunteer.badges.includes(newTier)
+        ) {
           volunteer.badges.push(newTier);
           badgeAdded = true;
         }
@@ -291,15 +359,18 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     // --------------- Prepare email(s) ---------------
     if (volunteer && volunteer.email) {
       // helper for formatting
-      const formatDate = d => (d ? new Date(d).toLocaleDateString() : "");
+      const formatDate = (d) => (d ? new Date(d).toLocaleDateString() : "");
       const firstName = volunteer.profile?.firstName || "";
       const lastName = volunteer.profile?.lastName || "";
 
-      const displayName = firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
+      const displayName =
+        firstName || lastName ? `${firstName} ${lastName}`.trim() : "Volunteer";
 
       const entryInfoHtml = `
     <p><strong>Activity:</strong> ${hoursEntry.activityName}</p>
-    <p><strong>Date of service:</strong> ${formatDate(hoursEntry.serviceDate)}</p>
+    <p><strong>Date of service:</strong> ${formatDate(
+      hoursEntry.serviceDate
+    )}</p>
     <p><strong>Hours:</strong> ${hoursEntry.hours}</p>
     <hr />
   `;
@@ -315,22 +386,28 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
         `;
         const approvalHtml = renderEmailTemplate({
           name: displayName,
-          body: bodyHtml
+          body: bodyHtml,
         });
 
         const msg1 = {
           to: volunteer.email,
           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
           subject: "Your Volunteer Hours Have Been Approved",
-          html: approvalHtml
+          html: approvalHtml,
         };
 
         try {
-          loggerFunction("debug", `${route} - Sending approval email to ${volunteer.email}`);
+          loggerFunction(
+            "debug",
+            `${route} - Sending approval email to ${volunteer.email}`
+          );
           await sgMail.send(msg1);
           loggerFunction("info", `${route} - Approval email sent`);
         } catch (err) {
-          loggerFunction("error", `${route} - Approval email failed: ${err.message}`);
+          loggerFunction(
+            "error",
+            `${route} - Approval email failed: ${err.message}`
+          );
         }
       }
 
@@ -341,20 +418,22 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
         const bodyHtml = `
           <p>Your volunteer hours submission has been <strong>rejected</strong>.</p>
           ${entryInfoHtml}
-          <p><strong>Reason:</strong> ${rejectionReason || "No reason provided"}</p>
+          <p><strong>Reason:</strong> ${
+            rejectionReason || "No reason provided"
+          }</p>
           <p>You may correct and re-submit your entry.</p>
         `;
 
         const rejectionHtml = renderEmailTemplate({
           name: displayName,
-          body: bodyHtml
+          body: bodyHtml,
         });
 
         const msg2 = {
           to: volunteer.email,
           from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
           subject: "Your Volunteer Hours Submission Was Rejected",
-          html: rejectionHtml
+          html: rejectionHtml,
         };
 
         try {
@@ -362,18 +441,29 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
           await sgMail.send(msg2);
           loggerFunction("info", `${route} - Rejection email sent`);
         } catch (err) {
-          loggerFunction("error", `${route} - Rejection email failed: ${err.message}`);
+          loggerFunction(
+            "error",
+            `${route} - Rejection email failed: ${err.message}`
+          );
         }
       }
 
       // ----------------------------------------------------
       // 3️⃣ SEND TIER UPGRADE EMAIL (only if tier changed)
       // ----------------------------------------------------
-      if (status === "approved" && newTier && newTier !== previousTier && newTier !== "None") {
+      if (
+        status === "approved" &&
+        newTier &&
+        newTier !== previousTier &&
+        newTier !== "None"
+      ) {
         const tierInfo = tierMessages[newTier];
 
         if (!tierInfo) {
-          loggerFunction("warn", `${route} - No tier message found for tier: ${newTier}`);
+          loggerFunction(
+            "warn",
+            `${route} - No tier message found for tier: ${newTier}`
+          );
         } else {
           const bodyHtml = `
             <p><strong>🎉 Congratulations!</strong></p>
@@ -382,7 +472,7 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
 
           const tierHtml = renderEmailTemplate({
             name: displayName,
-            body: bodyHtml
+            body: bodyHtml,
           });
 
           // -----------------------------
@@ -396,7 +486,10 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
             attachments.push(getAttachment(pdfFileName));
             attachments.push(getAttachment(pngFileName));
           } catch (err) {
-            loggerFunction("error", `${route} - Attachment error: ${err.message}`);
+            loggerFunction(
+              "error",
+              `${route} - Attachment error: ${err.message}`
+            );
           }
 
           const msg3 = {
@@ -404,15 +497,21 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
             from: process.env.SENDGRID_FROM_EMAIL || "no-reply@yourdomain.com",
             subject: tierInfo.subject,
             html: tierHtml,
-            attachments
+            attachments,
           };
 
           try {
-            loggerFunction("debug", `${route} - Sending tier upgrade email for tier=${newTier}`);
+            loggerFunction(
+              "debug",
+              `${route} - Sending tier upgrade email for tier=${newTier}`
+            );
             await sgMail.send(msg3);
             loggerFunction("info", `${route} - Tier upgrade email sent`);
           } catch (err) {
-            loggerFunction("error", `${route} - Tier email failed: ${err.message}`);
+            loggerFunction(
+              "error",
+              `${route} - Tier email failed: ${err.message}`
+            );
           }
         }
       }
@@ -424,20 +523,26 @@ router.put("/review-hours/:id", adminAuth, async (req, res) => {
     }
 
     // Final response
-    loggerFunction("info", `${route} - Response sent successfully. Id=${req.params.id}`);
+    loggerFunction(
+      "info",
+      `${route} - Response sent successfully. Id=${req.params.id}`
+    );
     loggerFunction(
       "debug",
-      `${route} - Response body sample. Id=${req.params.id} Data=${JSON.stringify(hoursEntry)} status=${
-        hoursEntry.status
-      }`
+      `${route} - Response body sample. Id=${
+        req.params.id
+      } Data=${JSON.stringify(hoursEntry)} status=${hoursEntry.status}`
     );
 
     res.json({
       message: `Hours ${status} successfully`,
-      entry: hoursEntry
+      entry: hoursEntry,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -454,15 +559,28 @@ router.get("/volunteers", adminAuth, async (req, res) => {
     if (!volunteers.length) {
       loggerFunction("warn", `${route} - No volunteer records found.`);
     } else {
-      loggerFunction("info", `${route} - Retrieved ${volunteers.length} volunteer record(s).`);
-      loggerFunction("debug", `${route} - Sample volunteer record: ${JSON.stringify(volunteers, null, 2)}`);
+      loggerFunction(
+        "info",
+        `${route} - Retrieved ${volunteers.length} volunteer record(s).`
+      );
+      loggerFunction(
+        "debug",
+        `${route} - Sample volunteer record: ${JSON.stringify(
+          volunteers,
+          null,
+          2
+        )}`
+      );
     }
 
     // ✅ Send response
     loggerFunction("info", `${route} - Response sent successfully.`);
     res.json(volunteers);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -476,18 +594,21 @@ router.get("/stats", adminAuth, async (req, res) => {
     loggerFunction("info", `${route} - totalVolunteers=${totalVolunteers}`);
     const totalHours = await User.aggregate([
       { $match: { role: "volunteer" } },
-      { $group: { _id: null, total: { $sum: "$totalHours" } } }
+      { $group: { _id: null, total: { $sum: "$totalHours" } } },
     ]);
     loggerFunction("info", `${route} - totalHours=${totalHours}`);
 
     const pendingSubmissions = await VolunteerHours.countDocuments({
-      status: "pending"
+      status: "pending",
     });
-    loggerFunction("info", `${route} - pendingSubmissions=${pendingSubmissions}`);
+    loggerFunction(
+      "info",
+      `${route} - pendingSubmissions=${pendingSubmissions}`
+    );
 
     const tierDistribution = await User.aggregate([
       { $match: { role: "volunteer" } },
-      { $group: { _id: "$tier", count: { $sum: 1 } } }
+      { $group: { _id: "$tier", count: { $sum: 1 } } },
     ]);
 
     loggerFunction("info", `${route} - Response sent successfully.`);
@@ -495,10 +616,13 @@ router.get("/stats", adminAuth, async (req, res) => {
       totalVolunteers,
       totalHours: totalHours[0]?.total || 0,
       pendingSubmissions,
-      tierDistribution
+      tierDistribution,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -544,8 +668,8 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
           $group: {
             _id: "$serviceType",
             totalVolunteers: { $addToSet: "$volunteerId" },
-            totalHours: { $sum: "$hours" }
-          }
+            totalHours: { $sum: "$hours" },
+          },
         },
         {
           $project: {
@@ -554,16 +678,19 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
             totalVolunteers: { $size: "$totalVolunteers" },
             totalHours: 1,
             totalValue: {
-              $round: [{ $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] }, 2]
-            }
-          }
+              $round: [
+                { $multiply: ["$totalHours", VOLUNTEER_HOURLY_RATE] },
+                2,
+              ],
+            },
+          },
         },
-        { $sort: { serviceType: 1 } }
+        { $sort: { serviceType: 1 } },
       ]);
 
       return res.status(200).json({
         message: "Service type report fetched successfully",
-        data: summary
+        data: summary,
       });
     }
 
@@ -571,7 +698,10 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
     // CASE 2️⃣ Detailed Volunteer Report
     // (volunteerName OR serviceType provided)
     // ==================================================
-    if ((volunteerName && volunteerName.trim() !== "") || (serviceType && serviceType.trim() !== "")) {
+    if (
+      (volunteerName && volunteerName.trim() !== "") ||
+      (serviceType && serviceType.trim() !== "")
+    ) {
       const pipeline = [{ $match: match }];
 
       // Filter by serviceType
@@ -586,8 +716,8 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
             from: "users",
             localField: "volunteerId",
             foreignField: "_id",
-            as: "volunteer"
-          }
+            as: "volunteer",
+          },
         },
         { $unwind: "$volunteer" }
       );
@@ -596,10 +726,13 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
       if (volunteerName && volunteerName.trim() !== "") {
         const words = volunteerName.trim().split(/\s+/);
 
-        const nameConditions = words.map(word => {
+        const nameConditions = words.map((word) => {
           const regex = new RegExp(word, "i");
           return {
-            $or: [{ "volunteer.profile.firstName": regex }, { "volunteer.profile.lastName": regex }]
+            $or: [
+              { "volunteer.profile.firstName": regex },
+              { "volunteer.profile.lastName": regex },
+            ],
           };
         });
 
@@ -613,16 +746,20 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
           $project: {
             _id: 0,
             "Volunteer Name": {
-              $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
+              $concat: [
+                "$volunteer.profile.firstName",
+                " ",
+                "$volunteer.profile.lastName",
+              ],
             },
             "Name of Activity": "$activityName",
             "Date of Service": {
-              $dateToString: { format: "%m-%d-%Y", date: "$serviceDate" }
+              $dateToString: { format: "%m-%d-%Y", date: "$serviceDate" },
             },
             "Number of Hours": "$hours",
             "Type of Service": "$serviceType",
-            "Activity Description": "$description"
-          }
+            "Activity Description": "$description",
+          },
         }
       );
 
@@ -630,7 +767,7 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
 
       return res.status(200).json({
         message: "Volunteer report fetched successfully",
-        data
+        data,
       });
     }
 
@@ -644,8 +781,8 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
           from: "users",
           localField: "volunteerId",
           foreignField: "_id",
-          as: "volunteer"
-        }
+          as: "volunteer",
+        },
       },
       { $unwind: "$volunteer" },
       { $sort: { serviceDate: -1 } },
@@ -653,28 +790,35 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
         $project: {
           _id: 0,
           "Volunteer Name": {
-            $concat: ["$volunteer.profile.firstName", " ", "$volunteer.profile.lastName"]
+            $concat: [
+              "$volunteer.profile.firstName",
+              " ",
+              "$volunteer.profile.lastName",
+            ],
           },
           "Name of Activity": "$activityName",
           "Date of Service": "$serviceDate",
           "Number of Hours": "$hours",
           "Type of Service": "$serviceType",
-          "Activity Description": "$description"
-        }
-      }
+          "Activity Description": "$description",
+        },
+      },
     ];
 
     const data = await VolunteerHours.aggregate(pipeline);
 
     return res.status(200).json({
       message: "Volunteer report fetched successfully",
-      data
+      data,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error: ${error.stack || error.message}`
+    );
     res.status(500).json({
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -683,37 +827,51 @@ router.post("/volunteer-report", adminAuth, async (req, res) => {
 router.get("/summary", adminAuth, async (req, res) => {
   const route = "GET /admin/summary";
   try {
-    loggerFunction("info", `${route} - Execution started. userId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - Execution started. userId=${req.user._id}`
+    );
 
     // 1️⃣ Total Volunteers
     const totalVolunteers = await User.countDocuments({ role: "volunteer" });
 
     // 2️⃣ Total Approved Hours
     const approvedRecords = await VolunteerHours.find({ status: "approved" });
-    const totalHours = approvedRecords.reduce((sum, record) => sum + record.hours, 0);
+    const totalHours = approvedRecords.reduce(
+      (sum, record) => sum + record.hours,
+      0
+    );
 
     // 3️⃣ Value of Service ($34.79 per hour)
     const valueOfService = (totalHours * 34.79).toFixed(2);
 
     // 4️⃣ Pending Submissions
-    const pendingSubmissions = await VolunteerHours.countDocuments({ status: "pending" });
+    const pendingSubmissions = await VolunteerHours.countDocuments({
+      status: "pending",
+    });
 
     const summary = {
       totalVolunteers,
       totalHours,
       valueOfService: `$${valueOfService}`,
-      pendingSubmissions
+      pendingSubmissions,
     };
 
     loggerFunction("info", `${route} - Summary fetched successfully.`);
-    loggerFunction("debug", `${route} - Summary data: ${JSON.stringify(summary, null, 2)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Summary data: ${JSON.stringify(summary, null, 2)}`
+    );
 
     res.status(200).json({
       message: "Admin summary fetched successfully",
-      summary
+      summary,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -725,30 +883,41 @@ router.get("/summary", adminAuth, async (req, res) => {
 router.get("/tiers", adminAuth, async (req, res) => {
   const route = "GET /admin/tiers";
   try {
-    loggerFunction("info", `${route} - API execution started. adminId=${req.user._id}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. adminId=${req.user._id}`
+    );
 
     // Count users per tier directly from User collection
     const tierCounts = await Promise.all(
-      TIERS.map(async t => {
+      TIERS.map(async (t) => {
         const count = await User.countDocuments({ tier: t.name });
         return {
           tier: t.name,
           range: t.range,
-          count
+          count,
         };
       })
     );
 
     loggerFunction("info", `${route} - Tier counts computed successfully.`);
-    loggerFunction("debug", `${route} - counts=${JSON.stringify(tierCounts, null, 2)}`);
+    loggerFunction(
+      "debug",
+      `${route} - counts=${JSON.stringify(tierCounts, null, 2)}`
+    );
 
     return res.status(200).json({
       message: "Tier counts fetched successfully",
-      data: tierCounts
+      data: tierCounts,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    loggerFunction(
+      "error",
+      `${route} - Error: ${error.stack || error.message}`
+    );
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 });
 
@@ -760,13 +929,18 @@ router.post("/tiers", adminAuth, async (req, res) => {
   const route = "POST /admin/tiers";
   try {
     const tierName = req.body.tierName;
-    loggerFunction("info", `${route} - API execution started. userId=${req.user._id} tier=${tierName}`);
+    loggerFunction(
+      "info",
+      `${route} - API execution started. userId=${req.user._id} tier=${tierName}`
+    );
 
     if (!tierName) {
       return res.status(400).json({ message: "tierName is required" });
     }
 
-    const tier = TIERS.find(t => t.name.toLowerCase() === tierName.toLowerCase());
+    const tier = TIERS.find(
+      (t) => t.name.toLowerCase() === tierName.toLowerCase()
+    );
     if (!tier) {
       return res.status(400).json({ message: "Invalid tier name" });
     }
@@ -785,7 +959,7 @@ router.post("/tiers", adminAuth, async (req, res) => {
         page,
         totalUsers: 0,
         totalPages: 0,
-        data: []
+        data: [],
       });
     }
 
@@ -796,14 +970,14 @@ router.post("/tiers", adminAuth, async (req, res) => {
         _id: 1,
         email: 1,
         "profile.firstName": 1,
-        "profile.lastName": 1
+        "profile.lastName": 1,
       }
     )
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const userIds = users.map(u => u._id);
+    const userIds = users.map((u) => u._id);
 
     // 2️⃣ Compute approved hours for these users
     const approvedHours = await VolunteerHours.aggregate([
@@ -811,26 +985,26 @@ router.post("/tiers", adminAuth, async (req, res) => {
       {
         $group: {
           _id: "$volunteerId",
-          totalApprovedHours: { $sum: "$hours" }
-        }
-      }
+          totalApprovedHours: { $sum: "$hours" },
+        },
+      },
     ]);
 
     // Convert to map for quick lookup
     const hoursMap = {};
-    approvedHours.forEach(h => {
+    approvedHours.forEach((h) => {
       hoursMap[h._id.toString()] = h.totalApprovedHours;
     });
 
     // 3️⃣ Combine user + approved hours
     const result = users
-      .map(u => ({
+      .map((u) => ({
         userId: u._id,
         email: u.email,
         // fullName: u.profile.fullName || "",
         firstName: u.profile.firstName || "",
         lastName: u.profile.lastName || "",
-        totalApprovedHours: hoursMap[u._id.toString()] || 0
+        totalApprovedHours: hoursMap[u._id.toString()] || 0,
       }))
       // 4️⃣ Sort by approved hours DESC
       .sort((a, b) => b.totalApprovedHours - a.totalApprovedHours);
@@ -841,11 +1015,16 @@ router.post("/tiers", adminAuth, async (req, res) => {
       limit,
       totalUsers,
       totalPages: Math.ceil(totalUsers / limit),
-      data: result
+      data: result,
     });
   } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.stack || error.message}`);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    loggerFunction(
+      "error",
+      `${route} - Error: ${error.stack || error.message}`
+    );
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 });
 
@@ -873,19 +1052,19 @@ router.post("/user-details", adminAuth, async (req, res) => {
       dateOfBirth: user.profile?.dateOfBirth || null,
       location: {
         state: user.profile?.location?.state || "",
-        country: user.profile?.location?.country || ""
+        country: user.profile?.location?.country || "",
       },
       schoolOrganization: user.profile?.schoolOrganization || "",
       phoneNumber: user.profile?.phoneNumber || "",
       email: user.email,
       causesOfInterest: (user.profile?.causesOfInterest || []).join(", "),
-      profilePicture: user.profile?.profilePicture || ""
+      profilePicture: user.profile?.profilePicture || "",
     });
   } catch (error) {
     console.error("Error fetching user details:", error);
     return res.status(500).json({
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 });
@@ -901,10 +1080,13 @@ router.get("/analytics/age-distribution", adminAuth, async (req, res) => {
     // Fetch all volunteers with dateOfBirth
     const volunteers = await User.find({
       role: "volunteer",
-      "profile.dateOfBirth": { $exists: true, $ne: null }
+      "profile.dateOfBirth": { $exists: true, $ne: null },
     }).select("profile.dateOfBirth");
 
-    loggerFunction("debug", `${route} - Found ${volunteers.length} volunteers with dateOfBirth`);
+    loggerFunction(
+      "debug",
+      `${route} - Found ${volunteers.length} volunteers with dateOfBirth`
+    );
 
     // Initialize age group counters
     const ageGroups = {
@@ -912,19 +1094,22 @@ router.get("/analytics/age-distribution", adminAuth, async (req, res) => {
       "14-18": 0,
       "19-25": 0,
       "26-50": 0,
-      "51+": 0
+      "51+": 0,
     };
 
     const currentDate = new Date();
 
     // Calculate age and categorize
-    volunteers.forEach(volunteer => {
+    volunteers.forEach((volunteer) => {
       const birthDate = new Date(volunteer.profile.dateOfBirth);
       let age = currentDate.getFullYear() - birthDate.getFullYear();
 
       // Adjust age if birthday hasn't occurred yet this year
       const monthDiff = currentDate.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())) {
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())
+      ) {
         age--;
       }
 
@@ -942,20 +1127,35 @@ router.get("/analytics/age-distribution", adminAuth, async (req, res) => {
       }
     });
 
-    loggerFunction("info", `${route} - Age distribution calculated successfully`);
-    loggerFunction("debug", `${route} - Distribution: ${JSON.stringify(ageGroups)}`);
+    loggerFunction(
+      "info",
+      `${route} - Age distribution calculated successfully`
+    );
+    loggerFunction(
+      "debug",
+      `${route} - Distribution: ${JSON.stringify(ageGroups)}`
+    );
 
     // Format response for bar chart
     const response = {
       labels: ["9-13", "14-18", "19-25", "26-50", "51+"],
-      data: [ageGroups["9-13"], ageGroups["14-18"], ageGroups["19-25"], ageGroups["26-50"], ageGroups["51+"]],
-      totalVolunteers: volunteers.length
+      data: [
+        ageGroups["9-13"],
+        ageGroups["14-18"],
+        ageGroups["19-25"],
+        ageGroups["26-50"],
+        ageGroups["51+"],
+      ],
+      totalVolunteers: volunteers.length,
     };
 
     loggerFunction("info", `${route} - Response sent successfully`);
     res.json(response);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -969,9 +1169,14 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
     loggerFunction("info", `${route} - API execution started`);
 
     // Fetch all approved volunteer hours
-    const approvedHours = await VolunteerHours.find({ status: "approved" }).select("serviceType hours");
+    const approvedHours = await VolunteerHours.find({
+      status: "approved",
+    }).select("serviceType hours");
 
-    loggerFunction("debug", `${route} - Found ${approvedHours.length} approved hour entries`);
+    loggerFunction(
+      "debug",
+      `${route} - Found ${approvedHours.length} approved hour entries`
+    );
 
     // Define the label mapping (normalize service types)
     const labelMapping = {
@@ -982,7 +1187,8 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
       "NEST4US Notes of Kindness": "Notes of Kindness",
       "NEST4US Workshops": "Workshops",
       "NEST4US Donations": "Donations",
-      Other: "Other"
+      "NEST4US Impact Internship": "Impact Internships",
+      Other: "Other",
     };
 
     // Define the desired order
@@ -994,19 +1200,19 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
       "Notes of Kindness",
       "Workshops",
       "Donations",
-      "Other"
+      "Other",
     ];
 
     // Initialize category data
     const categoryStats = {};
-    categoryOrder.forEach(cat => {
+    categoryOrder.forEach((cat) => {
       categoryStats[cat] = { hours: 0, count: 0 };
     });
 
     let totalHours = 0;
 
     // Aggregate hours by normalized category
-    approvedHours.forEach(entry => {
+    approvedHours.forEach((entry) => {
       const normalizedCategory = labelMapping[entry.serviceType] || "Other";
 
       if (categoryStats[normalizedCategory]) {
@@ -1016,8 +1222,14 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
       }
     });
 
-    loggerFunction("debug", `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`);
-    loggerFunction("info", `${route} - Total hours across all categories: ${totalHours}`);
+    loggerFunction(
+      "debug",
+      `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`
+    );
+    loggerFunction(
+      "info",
+      `${route} - Total hours across all categories: ${totalHours}`
+    );
 
     // Build response arrays in the specified order
     const labels = [];
@@ -1025,7 +1237,7 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
     const counts = [];
     const categories = [];
 
-    categoryOrder.forEach(category => {
+    categoryOrder.forEach((category) => {
       const stats = categoryStats[category];
       // Include ALL categories, even with 0 hours
       labels.push(category);
@@ -1035,7 +1247,10 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
         name: category,
         hours: stats.hours,
         count: stats.count,
-        percentage: totalHours > 0 ? ((stats.hours / totalHours) * 100).toFixed(1) : "0.0"
+        percentage:
+          totalHours > 0
+            ? ((stats.hours / totalHours) * 100).toFixed(1)
+            : "0.0",
       });
     });
 
@@ -1046,15 +1261,21 @@ router.get("/analytics/hours-by-category", adminAuth, async (req, res) => {
       data: data,
       counts: counts,
       totalHours: totalHours,
-      categories: categories
+      categories: categories,
     };
 
     loggerFunction("info", `${route} - Response sent successfully`);
-    loggerFunction("debug", `${route} - Final response: ${JSON.stringify(response)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Final response: ${JSON.stringify(response)}`
+    );
 
     res.json(response);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -1070,25 +1291,31 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
     // ========== AGE DISTRIBUTION ==========
     const volunteers = await User.find({
       role: "volunteer",
-      "profile.dateOfBirth": { $exists: true, $ne: null }
+      "profile.dateOfBirth": { $exists: true, $ne: null },
     }).select("profile.dateOfBirth");
 
-    loggerFunction("debug", `${route} - Found ${volunteers.length} volunteers with dateOfBirth`);
+    loggerFunction(
+      "debug",
+      `${route} - Found ${volunteers.length} volunteers with dateOfBirth`
+    );
 
     const ageGroups = {
       "9-13": 0,
       "14-18": 0,
       "19-25": 0,
       "26-50": 0,
-      "51+": 0
+      "51+": 0,
     };
 
     const currentDate = new Date();
-    volunteers.forEach(volunteer => {
+    volunteers.forEach((volunteer) => {
       const birthDate = new Date(volunteer.profile.dateOfBirth);
       let age = currentDate.getFullYear() - birthDate.getFullYear();
       const monthDiff = currentDate.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())) {
+      if (
+        monthDiff < 0 ||
+        (monthDiff === 0 && currentDate.getDate() < birthDate.getDate())
+      ) {
         age--;
       }
 
@@ -1099,23 +1326,33 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
       else if (age >= 51) ageGroups["51+"]++;
     });
 
-    loggerFunction("info", `${route} - Age distribution calculated successfully`);
+    loggerFunction(
+      "info",
+      `${route} - Age distribution calculated successfully`
+    );
 
     // ========== SERVICE CATEGORIES ==========
-    const approvedHours = await VolunteerHours.find({ status: "approved" }).select("serviceType hours");
+    const approvedHours = await VolunteerHours.find({
+      status: "approved",
+    }).select("serviceType hours");
 
-    loggerFunction("debug", `${route} - Found ${approvedHours.length} approved hour entries`);
+    loggerFunction(
+      "debug",
+      `${route} - Found ${approvedHours.length} approved hour entries`
+    );
 
     const labelMapping = {
       "NEST4US Service Projects": "Service Projects",
       "NEST4US Community/School Events": "Community/School Events",
       "NEST4US Food Rescues": "Food Rescues",
-      "NEST4US Community Resource Distributions": "Community Resource Distributions",
+      "NEST4US Community Resource Distributions":
+        "Community Resource Distributions",
       "NEST Tutors": "NEST Tutors",
       "NEST4US Notes of Kindness": "Notes of Kindness",
       "NEST4US Workshops": "Workshops",
       "NEST4US Donations": "Donations",
-      Other: "Other"
+      "NEST4US Impact Internship": "Impact Internships",
+      Other: "Other",
     };
 
     const categoryOrder = [
@@ -1127,17 +1364,17 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
       "Notes of Kindness",
       "Workshops",
       "Donations",
-      "Other"
+      "Other",
     ];
 
     const categoryStats = {};
-    categoryOrder.forEach(cat => {
+    categoryOrder.forEach((cat) => {
       categoryStats[cat] = { hours: 0, count: 0 };
     });
 
     let totalHours = 0;
 
-    approvedHours.forEach(entry => {
+    approvedHours.forEach((entry) => {
       const normalizedCategory = labelMapping[entry.serviceType] || "Other";
       if (categoryStats[normalizedCategory]) {
         categoryStats[normalizedCategory].hours += entry.hours || 0;
@@ -1146,7 +1383,10 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
       }
     });
 
-    loggerFunction("debug", `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Normalized category stats: ${JSON.stringify(categoryStats)}`
+    );
     loggerFunction("info", `${route} - Total service hours: ${totalHours}`);
 
     const categoryLabels = [];
@@ -1154,7 +1394,7 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
     const categoryCounts = [];
     const categories = [];
 
-    categoryOrder.forEach(category => {
+    categoryOrder.forEach((category) => {
       const stats = categoryStats[category];
       // Include ALL categories, even with 0 hours
       categoryLabels.push(category);
@@ -1164,7 +1404,10 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
         name: category,
         hours: stats.hours,
         count: stats.count,
-        percentage: totalHours > 0 ? ((stats.hours / totalHours) * 100).toFixed(1) : "0.0"
+        percentage:
+          totalHours > 0
+            ? ((stats.hours / totalHours) * 100).toFixed(1)
+            : "0.0",
       });
     });
 
@@ -1173,24 +1416,36 @@ router.get("/analytics/dashboard", adminAuth, async (req, res) => {
     const response = {
       ageDistribution: {
         labels: ["9-13", "14-18", "19-25", "26-50", "51+"],
-        data: [ageGroups["9-13"], ageGroups["14-18"], ageGroups["19-25"], ageGroups["26-50"], ageGroups["51+"]],
-        totalVolunteers: volunteers.length
+        data: [
+          ageGroups["9-13"],
+          ageGroups["14-18"],
+          ageGroups["19-25"],
+          ageGroups["26-50"],
+          ageGroups["51+"],
+        ],
+        totalVolunteers: volunteers.length,
       },
       serviceCategories: {
         labels: categoryLabels,
         data: categoryData,
         counts: categoryCounts,
         totalHours: totalHours,
-        categories: categories
-      }
+        categories: categories,
+      },
     };
 
     loggerFunction("info", `${route} - Response sent successfully`);
-    loggerFunction("debug", `${route} - Final response: ${JSON.stringify(response)}`);
+    loggerFunction(
+      "debug",
+      `${route} - Final response: ${JSON.stringify(response)}`
+    );
 
     res.json(response);
   } catch (error) {
-    loggerFunction("error", `${route} - Error occurred: ${error.stack || error.message}`);
+    loggerFunction(
+      "error",
+      `${route} - Error occurred: ${error.stack || error.message}`
+    );
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
@@ -1208,17 +1463,19 @@ router.get("/users/search", adminAuth, async (req, res) => {
     const words = query.trim().split(/\s+/);
 
     // Create search conditions for each word
-    const searchConditions = words.map(word => {
+    const searchConditions = words.map((word) => {
       const regex = new RegExp(word, "i"); // case-insensitive
       return {
-        $or: [{ "profile.firstName": regex }, { "profile.lastName": regex }]
+        $or: [{ "profile.firstName": regex }, { "profile.lastName": regex }],
       };
     });
 
     // Find users that match all words
     const users = await User.find({ $and: searchConditions })
       .limit(20) // limit for performance
-      .select("email profile.firstName profile.lastName profile.profilePicture");
+      .select(
+        "email profile.firstName profile.lastName profile.profilePicture"
+      );
 
     res.status(200).json({ success: true, users });
   } catch (err) {
@@ -1242,13 +1499,13 @@ router.get("/check-profile-completion", adminAuth, async (req, res) => {
     return res.status(200).json({
       redirectToUpdateProfile: emptyFields.length > 0,
       emptyFields,
-      isProfileComplete: emptyFields.length === 0
+      isProfileComplete: emptyFields.length === 0,
     });
   } catch (error) {
     console.error("Profile completion check error:", error);
     return res.status(500).json({
       message: "Server error",
-      error: error.message
+      error: error.message,
     });
   }
 });

@@ -4,7 +4,7 @@ const volunteerHoursSchema = new mongoose.Schema({
   volunteerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: true,
   },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -23,9 +23,10 @@ const volunteerHoursSchema = new mongoose.Schema({
       "NEST4US Notes of Kindness",
       "NEST4US Workshops",
       "NEST4US Donations",
-      "Other"
+      "NEST4US Impact Internship",
+      "Other",
     ],
-    required: true
+    required: true,
   },
   hours: { type: Number, required: true },
   description: { type: String, required: true },
@@ -33,13 +34,13 @@ const volunteerHoursSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ["pending", "approved", "rejected"],
-    default: "pending"
+    default: "pending",
   },
   rejectionReason: String,
   isHistorical: { type: Boolean, default: false },
   submittedAt: { type: Date, default: Date.now },
   reviewedAt: Date,
-  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+  reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 });
 
 module.exports = mongoose.model("VolunteerHours", volunteerHoursSchema);
