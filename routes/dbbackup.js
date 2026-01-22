@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const router = express.Router();
-
+const mongoose = require("mongoose");
 const { auth } = require("../middleware/auth");
 const loggerFunction = require("../utils/loggerFunction");
 
@@ -32,7 +32,7 @@ function ensureAdmin(req, res, next) {
  * ============================
  * GET /dbbackup/export
  */
-router.get("/export", async (req, res) => {
+router.get("/export", auth, async (req, res) => {
   const route = "GET /dbbackup/export";
   try {
     loggerFunction("info", `${route} - Backup started`);
@@ -102,65 +102,57 @@ router.get("/export", async (req, res) => {
  * POST /dbbackup/restore
  * Form-data: file = backup.zip
  */
-router.post(
-  "/restore",
+router.post("/restore", upload.single("file"), async (req, res) => {
+  const route = "POST /dbbackup/restore";
+  try {
+    loggerFunction("info", `${route} - Restore started`);
 
-  upload.single("file"),
-  async (req, res) => {
-    const route = "POST /dbbackup/restore";
-    try {
-      loggerFunction("info", `${route} - Restore started`);
+    if (!req.file) {
+      return res.status(400).json({ message: "Backup zip file is required" });
+    }
 
-      if (!req.file) {
-        return res.status(400).json({ message: "Backup zip file is required" });
+    const zipPath = req.file.path;
+    const extractPath = zipPath + "_extracted";
+
+    fs.mkdirSync(extractPath);
+
+    // Unzip
+    const unzipCommand = `unzip "${zipPath}" -d "${extractPath}"`;
+
+    exec(unzipCommand, (unzipErr) => {
+      if (unzipErr) {
+        loggerFunction("error", `${route} - Unzip failed: ${unzipErr.message}`);
+        return res
+          .status(500)
+          .json({ message: "Unzip failed", error: unzipErr.message });
       }
 
-      const zipPath = req.file.path;
-      const extractPath = zipPath + "_extracted";
+      // Find dumped folder (first subfolder)
+      const folders = fs.readdirSync(extractPath);
+      const dumpFolder = path.join(extractPath, folders[0]);
 
-      fs.mkdirSync(extractPath);
+      const mongoUri = process.env.MONGODB_URI;
 
-      // Unzip
-      const unzipCommand = `unzip "${zipPath}" -d "${extractPath}"`;
+      const restoreCommand = `mongorestore --uri="${mongoUri}" --stopOnError "${dumpFolder}"`;
 
-      exec(unzipCommand, (unzipErr) => {
-        if (unzipErr) {
-          loggerFunction(
-            "error",
-            `${route} - Unzip failed: ${unzipErr.message}`
-          );
+      exec(restoreCommand, (restoreErr, stdout, stderr) => {
+        if (restoreErr) {
+          loggerFunction("error", `${route} - Restore failed: ${stderr}`);
           return res
             .status(500)
-            .json({ message: "Unzip failed", error: unzipErr.message });
+            .json({ message: "Restore failed", error: stderr });
         }
 
-        // Find dumped folder (first subfolder)
-        const folders = fs.readdirSync(extractPath);
-        const dumpFolder = path.join(extractPath, folders[0]);
+        loggerFunction("info", `${route} - Restore completed successfully`);
 
-        const mongoUri = process.env.MONGODB_URI;
-
-        const restoreCommand = `mongorestore --uri="${mongoUri}" --drop "${dumpFolder}"`;
-
-        exec(restoreCommand, (restoreErr, stdout, stderr) => {
-          if (restoreErr) {
-            loggerFunction("error", `${route} - Restore failed: ${stderr}`);
-            return res
-              .status(500)
-              .json({ message: "Restore failed", error: stderr });
-          }
-
-          loggerFunction("info", `${route} - Restore completed successfully`);
-
-          res.json({ message: "Database restored successfully" });
-        });
+        res.json({ message: "Database restored successfully" });
       });
-    } catch (error) {
-      loggerFunction("error", `${route} - Error: ${error.message}`);
-      res.status(500).json({ message: "Server error", error: error.message });
-    }
+    });
+  } catch (error) {
+    loggerFunction("error", `${route} - Error: ${error.message}`);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
-);
+});
 
 /**
  * ============================
@@ -168,33 +160,36 @@ router.post(
  * ============================
  * DELETE /dbbackup/delete
  */
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", auth, async (req, res) => {
   const route = "DELETE /dbbackup/delete";
   try {
-    loggerFunction("warn", `${route} - FULL DATABASE DELETE INITIATED`);
+    loggerFunction("warn", `${route} - CLEARING ALL COLLECTIONS INITIATED`);
 
-    const mongoUri = process.env.MONGODB_URI;
+    // Ensure admin (strongly recommended)
+    // if (!req.user || req.user.role !== "admin") {
+    //   return res.status(403).json({ message: "Admins only" });
+    // }
 
-    // Extract DB name from URI
-    const dbName = new URL(mongoUri).pathname.replace("/", "");
+    const collections = await mongoose.connection.db.collections();
 
-    const command = `mongo "${mongoUri}" --eval "db.dropDatabase()"`;
+    for (const collection of collections) {
+      const name = collection.collectionName;
+      const result = await collection.deleteMany({});
+      loggerFunction(
+        "warn",
+        `${route} - Cleared ${result.deletedCount} documents from ${name}`
+      );
+    }
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        loggerFunction("error", `${route} - Drop failed: ${stderr}`);
-        return res
-          .status(500)
-          .json({ message: "Database delete failed", error: stderr });
-      }
-
-      loggerFunction("warn", `${route} - Database deleted successfully`);
-
-      res.json({ message: "Entire database deleted successfully" });
+    res.json({
+      message: "All collections cleared successfully",
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Clear collections failed",
+      error: error.message,
+    });
   }
 });
 
