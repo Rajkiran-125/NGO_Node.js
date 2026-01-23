@@ -1,18 +1,19 @@
 const express = require("express");
-const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const router = express.Router();
 const mongoose = require("mongoose");
+const archiver = require("archiver");
+
+const router = express.Router();
 const { auth } = require("../middleware/auth");
 const loggerFunction = require("../utils/loggerFunction");
 
-// Folder to store backups
+// Folder to store temp backups
 const BACKUP_DIR = path.join(__dirname, "../backups");
 if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR);
 
-// Multer config for upload
+// Multer config for restore upload
 const upload = multer({
   dest: BACKUP_DIR,
   limits: { fileSize: 1024 * 1024 * 500 }, // 500 MB
@@ -28,84 +29,70 @@ function ensureAdmin(req, res, next) {
 
 /**
  * ============================
- * 1️⃣ EXPORT ENTIRE DATABASE
+ * 1️⃣ EXPORT DATABASE (NODE.JS JSON BACKUP)
  * ============================
  * GET /dbbackup/export
  */
 router.get("/export", auth, async (req, res) => {
   const route = "GET /dbbackup/export";
   try {
-    loggerFunction("info", `${route} - Backup started`);
+    loggerFunction("info", `${route} - Node export started`);
 
-    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const backupPath = path.join(BACKUP_DIR, `backup-${timestamp}`);
+    const collections = await mongoose.connection.db.collections();
 
-    const mongoUri = process.env.MONGODB_URI;
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="node-backup-${Date.now()}.zip"`
+    );
 
-    const command = `mongodump --uri="${mongoUri}" --out="${backupPath}"`;
+    const archive = archiver("zip", { zlib: { level: 9 } });
+    archive.pipe(res);
 
-    exec(command, (error, stdout, stderr) => {
-      if (error) {
-        loggerFunction("error", `${route} - mongodump failed: ${stderr}`);
-        return res
-          .status(500)
-          .json({ message: "Backup failed", error: stderr });
-      }
+    for (const collection of collections) {
+      const name = collection.collectionName;
 
-      loggerFunction("info", `${route} - Backup completed at ${backupPath}`);
+      loggerFunction("info", `${route} - Exporting collection: ${name}`);
 
-      // Zip the backup folder
-      const zipFile = `${backupPath}.zip`;
-      const zipCommand = `cd "${BACKUP_DIR}" && zip -r "${zipFile}" "${path.basename(
-        backupPath
-      )}"`;
+      const docs = [];
+      const cursor = collection.find({});
 
-      exec(zipCommand, (zipErr) => {
-        if (zipErr) {
-          loggerFunction("error", `${route} - Zip failed: ${zipErr.message}`);
-          return res
-            .status(500)
-            .json({ message: "Zip failed", error: zipErr.message });
-        }
-
-        res.setHeader("Content-Type", "application/zip");
-        res.setHeader(
-          "Content-Disposition",
-          `attachment; filename="${path.basename(zipFile)}"`
-        );
-
-        // Send file for download
-        res.download(zipFile, (err) => {
-          if (err) {
-            loggerFunction(
-              "error",
-              `${route} - Download error: ${err.message}`
-            );
-          }
-
-          // Optional: cleanup
-          fs.rmSync(backupPath, { recursive: true, force: true });
-          // fs.unlinkSync(zipFile);
-        });
+      await cursor.forEach((doc) => {
+        docs.push(doc);
       });
-    });
+
+      const jsonData = JSON.stringify(docs, null, 2);
+
+      archive.append(jsonData, { name: `${name}.json` });
+    }
+
+    await archive.finalize();
+
+    loggerFunction("info", `${route} - Node export completed successfully`);
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Node export failed",
+      error: error.message,
+    });
   }
 });
 
 /**
  * ============================
- * 2️⃣ UPLOAD & RESTORE DATABASE
+ * 2️⃣ RESTORE DATABASE (APPEND MODE)
  * ============================
  * POST /dbbackup/restore
  * Form-data: file = backup.zip
+ *
+ * - Keeps existing records
+ * - Inserts new records
+ * - Skips duplicates by _id
  */
 router.post("/restore", upload.single("file"), async (req, res) => {
   const route = "POST /dbbackup/restore";
   try {
-    loggerFunction("info", `${route} - Restore started`);
+    loggerFunction("info", `${route} - Node restore started`);
 
     if (!req.file) {
       return res.status(400).json({ message: "Backup zip file is required" });
@@ -116,65 +103,120 @@ router.post("/restore", upload.single("file"), async (req, res) => {
 
     fs.mkdirSync(extractPath);
 
-    // Unzip
+    // Unzip uploaded backup
     const unzipCommand = `unzip "${zipPath}" -d "${extractPath}"`;
 
-    exec(unzipCommand, (unzipErr) => {
+    require("child_process").exec(unzipCommand, async (unzipErr) => {
       if (unzipErr) {
         loggerFunction("error", `${route} - Unzip failed: ${unzipErr.message}`);
-        return res
-          .status(500)
-          .json({ message: "Unzip failed", error: unzipErr.message });
+        return res.status(500).json({
+          message: "Unzip failed",
+          error: unzipErr.message,
+        });
       }
 
-      // Find dumped folder (first subfolder)
-      const folders = fs.readdirSync(extractPath);
-      const dumpFolder = path.join(extractPath, folders[0]);
+      const files = fs.readdirSync(extractPath);
 
-      const mongoUri = process.env.MONGODB_URI;
+      let totalInserted = 0;
+      let totalSkipped = 0;
 
-      const restoreCommand = `mongorestore --uri="${mongoUri}" --stopOnError "${dumpFolder}"`;
+      for (const file of files) {
+        if (!file.endsWith(".json")) continue;
 
-      exec(restoreCommand, (restoreErr, stdout, stderr) => {
-        if (restoreErr) {
-          loggerFunction("error", `${route} - Restore failed: ${stderr}`);
-          return res
-            .status(500)
-            .json({ message: "Restore failed", error: stderr });
+        const collectionName = file.replace(".json", "");
+        const filePath = path.join(extractPath, file);
+
+        loggerFunction(
+          "info",
+          `${route} - Restoring collection: ${collectionName}`
+        );
+
+        const rawData = fs.readFileSync(filePath, "utf-8");
+        const documents = JSON.parse(rawData);
+
+        if (!Array.isArray(documents) || documents.length === 0) continue;
+
+        const collection = mongoose.connection.db.collection(collectionName);
+
+        try {
+          const result = await collection.insertMany(documents, {
+            ordered: false, // continue on duplicate errors
+          });
+
+          totalInserted += result.insertedCount || 0;
+        } catch (insertErr) {
+          // Duplicate key errors are expected
+          if (insertErr.writeErrors) {
+            totalSkipped += insertErr.writeErrors.length;
+            loggerFunction(
+              "warn",
+              `${route} - Some duplicates skipped in ${collectionName}`
+            );
+          } else {
+            loggerFunction(
+              "error",
+              `${route} - Insert failed for ${collectionName}: ${insertErr.message}`
+            );
+            return res.status(500).json({
+              message: `Restore failed for collection ${collectionName}`,
+              error: insertErr.message,
+            });
+          }
         }
+      }
 
-        loggerFunction("info", `${route} - Restore completed successfully`);
+      // Cleanup temp files
+      fs.rmSync(extractPath, { recursive: true, force: true });
+      fs.unlinkSync(zipPath);
 
-        res.json({ message: "Database restored successfully" });
+      loggerFunction("info", `${route} - Restore completed`);
+
+      res.json({
+        message: "Restore completed successfully",
+        inserted: totalInserted,
+        skippedDuplicates: totalSkipped,
       });
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.message}`);
-    res.status(500).json({ message: "Server error", error: error.message });
+    res.status(500).json({
+      message: "Node restore failed",
+      error: error.message,
+    });
   }
 });
 
 /**
  * ============================
- * 3️⃣ DELETE ENTIRE DATABASE
+ * 3️⃣ CLEAR ALL COLLECTIONS (SAFE DELETE)
  * ============================
  * DELETE /dbbackup/delete
+ *
+ * - Does NOT drop database
+ * - Clears all documents from all collections
  */
 router.delete("/delete", auth, async (req, res) => {
   const route = "DELETE /dbbackup/delete";
   try {
     loggerFunction("warn", `${route} - CLEARING ALL COLLECTIONS INITIATED`);
 
-    // Ensure admin (strongly recommended)
-    // if (!req.user || req.user.role !== "admin") {
-    //   return res.status(403).json({ message: "Admins only" });
+    // Safety confirmation header (strongly recommended)
+    // const confirm = req.headers["x-confirm-delete"];
+    // if (confirm !== "YES") {
+    //   return res.status(400).json({
+    //     message: "Confirmation required. Send header X-CONFIRM-DELETE: YES",
+    //   });
     // }
 
     const collections = await mongoose.connection.db.collections();
 
+    let totalDeleted = 0;
+
     for (const collection of collections) {
       const name = collection.collectionName;
       const result = await collection.deleteMany({});
+      totalDeleted += result.deletedCount || 0;
+
       loggerFunction(
         "warn",
         `${route} - Cleared ${result.deletedCount} documents from ${name}`
@@ -183,6 +225,7 @@ router.delete("/delete", auth, async (req, res) => {
 
     res.json({
       message: "All collections cleared successfully",
+      totalDeleted,
     });
   } catch (error) {
     loggerFunction("error", `${route} - Error: ${error.message}`);
