@@ -9,6 +9,7 @@ const authRoutes = require("./routes/auth");
 const volunteerRoutes = require("./routes/volunteers");
 const hoursRoutes = require("./routes/hours");
 const adminRoutes = require("./routes/admin");
+const dbbackupRoutes = require("./routes/dbbackup.js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,7 +21,9 @@ app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers");
+mongoose.connect(
+  process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers"
+);
 
 // app.get("/", (req, res) => {
 //   res.json(
@@ -37,6 +40,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/volunteers", volunteerRoutes);
 app.use("/api/hours", hoursRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/dbbackup", dbbackupRoutes);
 
 // Serve frontend
 app.get("*", (req, res) => {
@@ -44,13 +48,14 @@ app.get("*", (req, res) => {
 });
 
 // MongoDB Connection - connect before starting the HTTP server
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers";
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers";
 
 mongoose.connection.on("connected", () => {
   console.log("MongoDB connected");
 });
 
-mongoose.connection.on("error", err => {
+mongoose.connection.on("error", (err) => {
   console.error("MongoDB connection error:", err);
 });
 
@@ -63,7 +68,7 @@ function startServer() {
 mongoose
   .connect(MONGODB_URI)
   .then(() => startServer())
-  .catch(err => {
+  .catch((err) => {
     console.error("Failed to connect to MongoDB:", err);
     process.exit(1);
   });
@@ -73,7 +78,7 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });
 
-process.on("uncaughtException", err => {
+process.on("uncaughtException", (err) => {
   console.error("Uncaught Exception:", err);
   process.exit(1);
 });
