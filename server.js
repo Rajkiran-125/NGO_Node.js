@@ -40,7 +40,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/volunteers", volunteerRoutes);
 app.use("/api/hours", hoursRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/dbbackup", dbbackupRoutes);
+app.use("/api/dbbackup", dbbackupRoutes);
 
 // Serve frontend
 app.get("*", (req, res) => {
