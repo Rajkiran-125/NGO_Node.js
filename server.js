@@ -10,6 +10,7 @@ const volunteerRoutes = require("./routes/volunteers");
 const hoursRoutes = require("./routes/hours");
 const adminRoutes = require("./routes/admin");
 const dbbackupRoutes = require("./routes/dbbackup.js");
+const createAdmin = require("./routes/createAdmin.js");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -41,6 +42,7 @@ app.use("/api/volunteers", volunteerRoutes);
 app.use("/api/hours", hoursRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/dbbackup", dbbackupRoutes);
+app.use("/api/create", createAdmin);
 
 // Serve frontend
 app.get("*", (req, res) => {

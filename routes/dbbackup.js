@@ -33,7 +33,7 @@ function ensureAdmin(req, res, next) {
  * ============================
  * GET /dbbackup/export
  */
-router.get("/export", auth, async (req, res) => {
+router.get("/export", async (req, res) => {
   const route = "GET /dbbackup/export";
   try {
     loggerFunction("info", `${route} - Node export started`);
@@ -195,7 +195,7 @@ router.post("/restore", upload.single("file"), async (req, res) => {
  * - Does NOT drop database
  * - Clears all documents from all collections
  */
-router.delete("/delete", auth, async (req, res) => {
+router.delete("/delete", async (req, res) => {
   const route = "DELETE /dbbackup/delete";
   try {
     loggerFunction("warn", `${route} - CLEARING ALL COLLECTIONS INITIATED`);
