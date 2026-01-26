@@ -195,45 +195,45 @@ router.post("/restore", upload.single("file"), async (req, res) => {
  * - Does NOT drop database
  * - Clears all documents from all collections
  */
-router.delete("/delete", async (req, res) => {
-  const route = "DELETE /dbbackup/delete";
-  try {
-    loggerFunction("warn", `${route} - CLEARING ALL COLLECTIONS INITIATED`);
+// router.delete("/delete", async (req, res) => {
+//   const route = "DELETE /dbbackup/delete";
+//   try {
+//     loggerFunction("warn", `${route} - CLEARING ALL COLLECTIONS INITIATED`);
 
-    // Safety confirmation header (strongly recommended)
-    // const confirm = req.headers["x-confirm-delete"];
-    // if (confirm !== "YES") {
-    //   return res.status(400).json({
-    //     message: "Confirmation required. Send header X-CONFIRM-DELETE: YES",
-    //   });
-    // }
+//     // Safety confirmation header (strongly recommended)
+//     // const confirm = req.headers["x-confirm-delete"];
+//     // if (confirm !== "YES") {
+//     //   return res.status(400).json({
+//     //     message: "Confirmation required. Send header X-CONFIRM-DELETE: YES",
+//     //   });
+//     // }
 
-    const collections = await mongoose.connection.db.collections();
+//     const collections = await mongoose.connection.db.collections();
 
-    let totalDeleted = 0;
+//     let totalDeleted = 0;
 
-    for (const collection of collections) {
-      const name = collection.collectionName;
-      const result = await collection.deleteMany({});
-      totalDeleted += result.deletedCount || 0;
+//     for (const collection of collections) {
+//       const name = collection.collectionName;
+//       const result = await collection.deleteMany({});
+//       totalDeleted += result.deletedCount || 0;
 
-      loggerFunction(
-        "warn",
-        `${route} - Cleared ${result.deletedCount} documents from ${name}`
-      );
-    }
+//       loggerFunction(
+//         "warn",
+//         `${route} - Cleared ${result.deletedCount} documents from ${name}`
+//       );
+//     }
 
-    res.json({
-      message: "All collections cleared successfully",
-      totalDeleted,
-    });
-  } catch (error) {
-    loggerFunction("error", `${route} - Error: ${error.message}`);
-    res.status(500).json({
-      message: "Clear collections failed",
-      error: error.message,
-    });
-  }
-});
+//     res.json({
+//       message: "All collections cleared successfully",
+//       totalDeleted,
+//     });
+//   } catch (error) {
+//     loggerFunction("error", `${route} - Error: ${error.message}`);
+//     res.status(500).json({
+//       message: "Clear collections failed",
+//       error: error.message,
+//     });
+//   }
+// });
 
 module.exports = router;
