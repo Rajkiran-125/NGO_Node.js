@@ -14,13 +14,16 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors());  
 app.use(express.json());
 app.use(express.static("public"));
 app.use("/uploads", express.static("uploads"));
 
+
+console.log("process.env.MONGODB_URI:  ",process.env.MONGODB_URI)
+
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/nest4us_volunteers");
+mongoose.connect(process.env.MONGODB_URI || "mongodb+srv://rajjaiswar1256_db_user:opxDjRrah9noc7sY@cluster0.tuehyn8.mongodb.net/");
 
 // app.get("/", (req, res) => {
 //   res.json(
